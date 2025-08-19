@@ -1,12 +1,19 @@
 import React, { useState } from 'react';
 import { observer } from 'mobx-react-lite';
+import { useNavigate } from 'react-router-dom';
 import Header from './Header';
 import CreateBoardModal from './CreateBoardModal';
+import Loading from './Loading';
 import { authStore } from '../stores/AuthStore';
 
 const Dashboard: React.FC = observer(() => {
+  const navigate = useNavigate();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const currentBoards = authStore.currentOrganizationBoards;
+
+  const handleBoardClick = (boardId: string) => {
+    navigate(`/board/${boardId}`);
+  };
 
   return (
     <div className="min-h-screen bg-[#0067A3]">
@@ -32,8 +39,12 @@ const Dashboard: React.FC = observer(() => {
 
         {/* Boards Section */}
         <div className="max-w-4xl mx-auto">
-          {/* Empty State or Boards Display */}
-          {currentBoards.length === 0 ? (
+          {/* Loading State */}
+          {authStore.isLoadingBoards ? (
+            <Loading message="Loading boards..." size="large" className="text-white" />
+          ) : (
+          /* Empty State or Boards Display */
+          currentBoards.length === 0 ? (
             <div className="text-center">
               <div className="flex items-center justify-center text-white mb-6">
                 <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
@@ -70,7 +81,7 @@ const Dashboard: React.FC = observer(() => {
                 <div
                   key={board.id}
                   className="bg-white rounded-lg p-4 cursor-pointer hover:shadow-lg transition-shadow duration-200 min-h-[120px]"
-                  onClick={() => board.url && window.open(board.url, '_blank')}
+                  onClick={() => handleBoardClick(board.id)}
                 >
                   <h3 className="font-semibold text-gray-900 mb-2">{board.name}</h3>
                   {board.desc && (
@@ -79,6 +90,7 @@ const Dashboard: React.FC = observer(() => {
                 </div>
               ))}
             </div>
+          )
           )}
         </div>
       </main>

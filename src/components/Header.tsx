@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { observer } from 'mobx-react-lite';
+import { useNavigate } from 'react-router-dom';
 import { authStore } from '../stores/AuthStore';
 import CreateBoardModal from './CreateBoardModal';
 
@@ -14,12 +15,17 @@ const Header: React.FC<HeaderProps> = observer(({
   title = 'Task Manager',
   showSearch = true,
 }) => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [isOrgDropdownOpen, setIsOrgDropdownOpen] = useState(false);
   const [isCreateBoardModalOpen, setIsCreateBoardModalOpen] = useState(false);
 
   const handleLogout = () => {
     authStore.logout();
+  };
+
+  const handleHomeClick = () => {
+    navigate('/');
   };
 
   const handleOrganizationChange = (organization: any) => {
@@ -39,7 +45,10 @@ const Header: React.FC<HeaderProps> = observer(({
         <div className="flex items-center justify-between h-12">
           {/* Left Section - Home Icon and Organization Dropdown */}
           <div className="flex items-center space-x-2">
-            <button className="bg-transparent p-2">
+            <button 
+              onClick={handleHomeClick}
+              className="bg-transparent p-2 hover:bg-blue-600 rounded transition-colors duration-200"
+            >
               <img src="/Home.png" alt="Home" className="w-6 h-6" />
             </button>
             

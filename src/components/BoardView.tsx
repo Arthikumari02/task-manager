@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useParams } from 'react-router-dom';
 import Header from './Header';
+import Loading from './Loading';
 import { authStore } from '../stores/AuthStore';
 
 interface TrelloList {
@@ -32,6 +33,7 @@ const BoardView: React.FC = observer(() => {
   const [showNewTaskInputs, setShowNewTaskInputs] = useState<{ [key: string]: boolean }>({});
   const [newListTitle, setNewListTitle] = useState('');
   const [showNewListInput, setShowNewListInput] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!boardId) return;
@@ -46,13 +48,20 @@ const BoardView: React.FC = observer(() => {
 
     // Fetch lists and cards for this board
     const fetchBoardData = async () => {
-      const [fetchedLists, fetchedCards] = await Promise.all([
-        authStore.fetchBoardLists(boardId),
-        authStore.fetchBoardCards(boardId)
-      ]);
-      
-      setLists(fetchedLists);
-      setCards(fetchedCards);
+      setIsLoading(true);
+      try {
+        const [fetchedLists, fetchedCards] = await Promise.all([
+          authStore.fetchBoardLists(boardId),
+          authStore.fetchBoardCards(boardId)
+        ]);
+        
+        setLists(fetchedLists);
+        setCards(fetchedCards);
+      } catch (error) {
+        console.error('Error fetching board data:', error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     fetchBoardData();
@@ -110,10 +119,14 @@ const BoardView: React.FC = observer(() => {
           <h1 className="text-white text-xl font-semibold">{boardName}</h1>
         </div>
 
-        {/* Board Lists */}
-        <div className="flex space-x-4 overflow-x-auto pb-4">
-          {/* Show Add List button if no lists exist */}
-          {lists.length === 0 && !showNewListInput && (
+        {/* Loading State */}
+        {isLoading ? (
+          <Loading message="Loading board data..." size="large" className="text-white" />
+        ) : (
+          /* Board Lists */
+          <div className="flex space-x-4 overflow-x-auto pb-4">
+            {/* Show Add List button if no lists exist */}
+            {lists.length === 0 && !showNewListInput && (
             <div className="text-center py-12 w-full">
               <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -296,7 +309,8 @@ const BoardView: React.FC = observer(() => {
               </button>
             )
           )}
-        </div>
+          </div>
+        )}
       </main>
     </div>
   );
