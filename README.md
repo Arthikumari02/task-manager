@@ -1,46 +1,118 @@
-# Getting Started with Create React App
+# Task Manager - Trello Integration
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A modern task management application built with React and TypeScript that integrates with Trello for seamless task tracking.
+
+## Features
+
+- **Trello OAuth Integration**: Secure authentication with Trello
+- **Modern UI**: Clean, responsive design with Tailwind CSS
+- **Task Management**: Full integration with Trello boards and cards
+- **Real-time Sync**: Stay synchronized with your Trello data
+
+## Setup Instructions
+
+### 1. Create Your Trello Application
+
+1. Visit [https://trello.com/app-key](https://trello.com/app-key)
+2. Create a new application to get your Client ID
+3. Copy your Client ID (this replaces the old API key approach)
+
+### 2. Configure Allowed Origins
+
+1. In your Trello application settings, add the return URL to **Allowed Origins**:
+   ```
+   http://localhost:3000/auth/callback
+   ```
+2. For production, add your production domain's callback URL
+
+### 3. Environment Configuration
+
+1. Copy the example environment file:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Edit `.env` and add your Trello Client ID:
+   ```
+   REACT_APP_TRELLO_CLIENT_ID=your_trello_client_id_here
+   ```
+
+### 4. Install Dependencies
+
+```bash
+npm install
+```
+
+### 5. Start the Development Server
+
+```bash
+npm start
+```
+
+The app will open at [http://localhost:3000](http://localhost:3000)
+
+## How to Use
+
+### Authentication Flow
+
+1. **Click "LOG IN WITH TRELLO"** - This will redirect you to Trello's authorization page
+2. **If not logged in to Trello**: You'll be prompted to enter your Trello credentials
+3. **If already logged in**: You'll skip directly to the authorization step
+4. **Click "Agree"** on the Terms page to grant access
+5. **Automatic redirect**: You'll be redirected back to the Task Manager with your access token
+
+### OAuth URL Format
+
+The application uses the following Trello OAuth URL with proper clientId:
+```
+https://trello.com/1/OAuthAuthorizeToken?expiration=never&name=TaskManager&scope=read,write,account&key={CLIENT_ID}&callback_method=fragment&return_url={RETURN_URL}
+```
+
+**Important**: The `return_url` value is automatically generated using the `getReturnURL()` function and must be added to your Trello application's **Allowed Origins**.
+
+## Project Structure
+
+```
+src/
+├── components/
+│   ├── auth/
+│   │   └── Login.tsx          # Login component with Trello OAuth
+│   └── Dashboard.tsx          # Main dashboard after authentication
+├── stores/
+│   └── AuthStore.ts           # MobX authentication store
+├── utils/
+│   └── trelloAuth.ts          # OAuth utility functions (getReturnURL, etc.)
+├── App.tsx                    # Main app component with MobX observer
+└── index.css                  # Global styles with Tailwind CSS
+```
 
 ## Available Scripts
 
-In the project directory, you can run:
+- `npm start` - Runs the development server
+- `npm test` - Launches the test runner
+- `npm run build` - Builds the app for production
+- `npm run eject` - Ejects from Create React App (one-way operation)
 
-### `npm start`
+## Technologies Used
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+- **React 19** with TypeScript
+- **MobX** for reactive state management
+- **Tailwind CSS** for styling
+- **Trello API** for task management
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## Security Notes
 
-### `npm test`
+- API keys are stored in environment variables
+- Tokens are stored securely in localStorage
+- OAuth flow follows Trello's recommended practices
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Troubleshooting
 
-### `npm run build`
+### "Trello API key not found" Error
+- Ensure your `.env` file exists and contains `REACT_APP_TRELLO_API_KEY`
+- Restart the development server after adding environment variables
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Authentication Issues
+- Check that your API key is valid at [https://trello.com/app-key](https://trello.com/app-key)
+- Ensure you clicked "Agree" on the Trello authorization page
+- Clear browser localStorage and try again if needed
