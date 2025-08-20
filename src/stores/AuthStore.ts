@@ -102,7 +102,7 @@ class AuthStore {
     await this.fetchBoardsForOrganization(organization.id);
   });
 
-  fetchBoardsForOrganization = async (organizationId: string) => {
+  fetchBoardsForOrganization = action(async (organizationId: string) => {
     if (!this.token || !this.clientId) return;
 
     this.isLoadingBoards = true;
@@ -130,22 +130,28 @@ class AuthStore {
         prefs: board.prefs
       }));
 
-      // Replace boards for this organization to avoid duplicates
-      this.boards = [
-        ...this.boards.filter(b => b.organizationId !== organizationId),
-        ...fetchedBoards
-      ];
+      runInAction(() => {
+        // Replace boards for this organization to avoid duplicates
+        this.boards = [
+          ...this.boards.filter(b => b.organizationId !== organizationId),
+          ...fetchedBoards
+        ];
+      });
 
     } catch (error) {
       console.error('Error fetching boards:', error);
-      this.boardsError = error instanceof Error ? error.message : 'Failed to fetch boards';
-      this.boards = [];
+      runInAction(() => {
+        this.boardsError = error instanceof Error ? error.message : 'Failed to fetch boards';
+        this.boards = [];
+      });
     } finally {
-      this.isLoadingBoards = false;
+      runInAction(() => {
+        this.isLoadingBoards = false;
+      });
     }
-  };
+  });
 
-  addBoard = async (name: string, description: string = ''): Promise<Board | null> => {
+  addBoard = action(async (name: string, description: string = ''): Promise<Board | null> => {
     if (!this.currentOrganization || !this.token || !this.clientId) return null;
 
     this.isCreatingBoard = true;
@@ -184,22 +190,28 @@ class AuthStore {
         prefs: newBoard.prefs
       };
 
-      // Add the new board to our local state
-      this.boards.push(boardToAdd);
+      runInAction(() => {
+        // Add the new board to our local state
+        this.boards.push(boardToAdd);
+      });
       
       return boardToAdd;
 
     } catch (error) {
       console.error('Error creating board:', error);
-      this.boardsError = error instanceof Error ? error.message : 'Failed to create board';
+      runInAction(() => {
+        this.boardsError = error instanceof Error ? error.message : 'Failed to create board';
+      });
       return null;
     } finally {
-      this.isCreatingBoard = false;
+      runInAction(() => {
+        this.isCreatingBoard = false;
+      });
     }
-  };
+  });
 
   // Fetch board lists from Trello API
-  fetchBoardLists = async (boardId: string): Promise<TrelloList[]> => {
+  fetchBoardLists = action(async (boardId: string): Promise<TrelloList[]> => {
     if (!this.token || !this.clientId) return [];
 
     this.isLoadingLists = true;
@@ -222,15 +234,19 @@ class AuthStore {
       return this.boardLists[boardId];
     } catch (error) {
       console.error('Error fetching board lists:', error);
-      this.listsError = error instanceof Error ? error.message : 'Failed to fetch lists';
+      runInAction(() => {
+        this.listsError = error instanceof Error ? error.message : 'Failed to fetch lists';
+      });
       return [];
     } finally {
-      this.isLoadingLists = false;
+      runInAction(() => {
+        this.isLoadingLists = false;
+      });
     }
-  };
+  });
 
   // Create a new list in a board
-  createList = async (boardId: string, name: string): Promise<TrelloList | null> => {
+  createList = action(async (boardId: string, name: string): Promise<TrelloList | null> => {
     if (!this.token || !this.clientId) return null;
 
     this.isCreatingList = true;
@@ -268,15 +284,19 @@ class AuthStore {
       return newList;
     } catch (error) {
       console.error('Error creating list:', error);
-      this.listsError = error instanceof Error ? error.message : 'Failed to create list';
+      runInAction(() => {
+        this.listsError = error instanceof Error ? error.message : 'Failed to create list';
+      });
       return null;
     } finally {
-      this.isCreatingList = false;
+      runInAction(() => {
+        this.isCreatingList = false;
+      });
     }
-  };
+  });
 
   // Create a new card in a list
-  createCard = async (listId: string, name: string): Promise<TrelloCard | null> => {
+  createCard = action(async (listId: string, name: string): Promise<TrelloCard | null> => {
     if (!this.token || !this.clientId) return null;
 
     this.isCreatingCard = true;
@@ -318,9 +338,11 @@ class AuthStore {
       console.error('Error creating card:', error);
       return null;
     } finally {
-      this.isCreatingCard = false;
+      runInAction(() => {
+        this.isCreatingCard = false;
+      });
     }
-  };
+  });
 
   // Fetch cards for a board
   fetchBoardCards = async (boardId: string): Promise<TrelloCard[]> => {
@@ -354,19 +376,21 @@ class AuthStore {
     }
   };
 
-  private initializeData = async () => {
+  private initializeData = action(async () => {
     if (this.token && this.clientId) {
       // If we have a token, fetch real organizations and boards
       await this.fetchUserOrganizations();
     } else {
       // If no token, clear data
-      this.organizations = [];
-      this.currentOrganization = null;
-      this.boards = [];
+      runInAction(() => {
+        this.organizations = [];
+        this.currentOrganization = null;
+        this.boards = [];
+      });
     }
-  };
+  });
 
-  fetchUserOrganizations = async () => {
+  fetchUserOrganizations = action(async () => {
     if (!this.token || !this.clientId) return;
 
     try {
@@ -380,25 +404,33 @@ class AuthStore {
 
       const trelloOrgs = await response.json();
       
-      this.organizations = trelloOrgs.map((org: any) => ({
-        id: org.id,
-        name: org.name,
-        displayName: org.displayName || org.name
-      }));
+      runInAction(() => {
+        this.organizations = trelloOrgs.map((org: any) => ({
+          id: org.id,
+          name: org.name,
+          displayName: org.displayName || org.name
+        }));
 
-      // Set first organization as default and fetch its boards
+        // Set first organization as default
+        if (this.organizations.length > 0) {
+          this.currentOrganization = this.organizations[0];
+        }
+      });
+
+      // Fetch boards for the first organization
       if (this.organizations.length > 0) {
-        this.currentOrganization = this.organizations[0];
         await this.fetchBoardsForOrganization(this.organizations[0].id);
       }
 
     } catch (error) {
       console.error('Error fetching organizations:', error);
-      this.organizations = [];
-      this.currentOrganization = null;
-      this.boards = [];
+      runInAction(() => {
+        this.organizations = [];
+        this.currentOrganization = null;
+        this.boards = [];
+      });
     }
-  };
+  });
 
 }
 
