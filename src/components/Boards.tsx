@@ -150,7 +150,7 @@ const Boards: React.FC = observer(() => {
               </p>
               <button
                 onClick={() => setIsCreateModalOpen(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition duration-200 flex items-center space-x-2 mx-auto"
+                className="bg-white hover:bg-[#2FA9F1] text-white px-6 py-3 rounded-lg transition duration-200 flex items-center space-x-2 mx-auto"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
