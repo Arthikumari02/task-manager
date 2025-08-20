@@ -38,18 +38,36 @@ const BoardView: React.FC = observer(() => {
   useEffect(() => {
     if (!boardId) return;
 
-    // Find the board name from the store using boardId
-    const board = authStore.boards.find(b => b.id === boardId);
-    if (board) {
-      setBoardName(board.name);
-    } else {
-      setBoardName('Board');
-    }
-
-    // Fetch lists and cards for this board
     const fetchBoardData = async () => {
       setIsLoading(true);
       try {
+        // First ensure we have the board data by fetching organizations if needed
+        if (authStore.boards.length === 0 && authStore.isAuthenticated) {
+          await authStore.fetchUserOrganizations();
+        }
+
+        // Now try to find the board name
+        const board = authStore.boards.find(b => b.id === boardId);
+        if (board) {
+          setBoardName(board.name);
+        } else {
+          // If board is still not found, try to fetch it directly from Trello API
+          try {
+            const response = await fetch(
+              `https://api.trello.com/1/boards/${boardId}?key=${authStore.clientId}&token=${authStore.token}`
+            );
+            if (response.ok) {
+              const boardData = await response.json();
+              setBoardName(boardData.name);
+            } else {
+              setBoardName('Board');
+            }
+          } catch (error) {
+            console.error('Error fetching board details:', error);
+            setBoardName('Board');
+          }
+        }
+
         const [fetchedLists, fetchedCards] = await Promise.all([
           authStore.fetchBoardLists(boardId),
           authStore.fetchBoardCards(boardId)
@@ -142,7 +160,7 @@ const BoardView: React.FC = observer(() => {
               <p className="text-white text-opacity-80 mb-4">Add a list to get started organizing your tasks</p>
               <button
                 onClick={() => setShowNewListInput(true)}
-                className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2 mx-auto"
+                className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-sm transition-colors flex items-center space-x-2 mx-auto"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -154,7 +172,7 @@ const BoardView: React.FC = observer(() => {
 
           {/* Show Add List input if no lists exist and input is active */}
           {lists.length === 0 && showNewListInput && (
-            <div className="bg-gray-100 rounded-lg p-3 max-w-[252px] flex-shrink-0 mx-auto">
+            <div className="bg-gray-100 rounded-sm p-3 max-w-[252px] flex-shrink-0 mx-auto">
               <h3 className="font-semibold text-gray-800 mb-2">Create Your First List</h3>
               <input
                 type="text"
@@ -197,7 +215,7 @@ const BoardView: React.FC = observer(() => {
               return (
                 <div
                   key={list.id}
-                  className="bg-[#F4F5F7] rounded-md px-3 py-2 w-64 flex-shrink-0 min-h-[80px] h-fit"
+                  className="bg-[#F4F5F7] rounded-sm px-3 py-2 w-64 flex-shrink-0 min-h-[80px] h-fit"
                 >
                   {/* List Title */}
                   <h3 className="font-semibold text-gray-800 text-sm mb-2">

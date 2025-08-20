@@ -81,7 +81,7 @@ const Dashboard: React.FC = observer(() => {
                 {currentBoards.map((board) => (
                   <div
                     key={board.id}
-                    className="bg-white rounded-lg p-6 cursor-pointer hover:shadow-lg transition-all duration-200 min-h-[120px] flex items-center justify-center"
+                    className="bg-white rounded-sm p-6 cursor-pointer hover:shadow-lg transition-all duration-200 min-h-[120px] flex items-center justify-center"
                     onClick={() => handleBoardClick(board.id)}
                   >
                     <h3 className="font-medium text-[#0079BF] text-center text-lg">{board.name}</h3>
@@ -91,7 +91,7 @@ const Dashboard: React.FC = observer(() => {
                 {/* Create New Board Card - Always show in the same row */}
                 <button
                   onClick={() => setIsCreateModalOpen(true)}
-                  className="bg-white hover:bg-[#2FA9F1] hover:text-white text-gray-600 p-6 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 min-h-[120px]"
+                  className="bg-white hover:bg-[#2FA9F1] hover:text-white text-gray-600 p-6 rounded-sm transition-colors duration-200 flex items-center justify-center space-x-2 min-h-[120px]"
                 >
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
