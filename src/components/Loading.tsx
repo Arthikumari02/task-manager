@@ -7,23 +7,29 @@ interface LoadingProps {
 }
 
 const Loading: React.FC<LoadingProps> = ({ 
-  message = 'Loading...', 
+  message = 'Loading', 
   size = 'medium',
   className = '' 
 }) => {
   const sizeClasses = {
-    small: 'h-4 w-4',
-    medium: 'h-8 w-8',
-    large: 'h-12 w-12'
+    small: 'h-6 w-6',
+    medium: 'h-10 w-10',
+    large: 'h-16 w-16'
   };
 
   return (
-    <div className={`flex flex-col items-center justify-center py-8 ${className}`}>
-      <div className={`animate-spin rounded-full border-b-2 border-blue-600 ${sizeClasses[size]}`}></div>
-      {message && (
-        <p className="mt-3 text-gray-600 text-sm">{message}</p>
-      )}
+    <div className={`flex flex-col items-center justify-center py-12 ${className}`}>
+    {/* Spinner wrapper */}
+    <div className={`relative flex items-center justify-center ${sizeClasses[size]} mb-4`}>
+      {/* Spinning border */}
+      <div className={`absolute inset-0 animate-spin rounded-full border-4 border-white border-opacity-30 border-t-white`} />
+      
+      {/* Static text inside */}
+      <p className="text-white text-opacity-90 text-xs sm:text-sm font-medium text-center">
+        {message}
+      </p>
     </div>
+  </div>
   );
 };
 

@@ -36,13 +36,40 @@ const Boards: React.FC = observer(() => {
         showNavigation={true}
       />
 
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+      <main className="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
+        <div className="py-4 sm:py-6">
+          <div className="mb-4 sm:mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
               {authStore.currentOrganization?.displayName} Boards
             </h2>
-            <p className="text-gray-600">Manage and organize your boards in this organization</p>
+            <p className="text-sm sm:text-base text-gray-600">Manage and organize your boards in this organization</p>
+          </div>
+
+          {/* Organization Selector */}
+          <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
+            <label htmlFor="org-select" className="text-gray-700 font-medium text-sm sm:text-base">
+              Organization:
+            </label>
+            <select
+              id="org-select"
+              value={authStore.currentOrganization?.id || ''}
+              onChange={(e) => {
+                const selectedOrg = authStore.organizations.find(
+                  (org) => org.id === e.target.value
+                );
+                if (selectedOrg) {
+                  authStore.setCurrentOrganization(selectedOrg);
+                  authStore.fetchBoardsForOrganization(selectedOrg.id);
+                }
+              }}
+              className="w-full sm:w-auto px-3 py-2 border rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+            >
+              {authStore.organizations.map((org) => (
+                <option key={org.id} value={org.id}>
+                  {org.displayName}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Error State */}
@@ -64,53 +91,48 @@ const Boards: React.FC = observer(() => {
           {isLoading && (
             <div className="text-center py-12">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <p className="mt-2 text-gray-600">Loading boards...</p>
+              <p className="mt-2 text-gray-600">Loading...</p>
             </div>
           )}
 
           {/* Board Grid - Show when not loading */}
           {!isLoading && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
               {/* Create New Board Card - Always visible when not loading */}
               <div 
                 onClick={() => setIsCreateModalOpen(true)}
-                className="bg-white rounded-lg shadow-sm border-2 border-dashed border-gray-300 hover:border-blue-400 transition-colors duration-200 p-6 flex flex-col items-center justify-center min-h-[200px] cursor-pointer group"
+                className="bg-white rounded-lg shadow-sm border-2 border-dashed border-gray-300 hover:border-blue-400 transition-colors duration-200 p-4 sm:p-6 flex flex-col items-center justify-center min-h-[160px] sm:min-h-[200px] cursor-pointer group"
               >
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4 group-hover:bg-blue-200 transition-colors duration-200">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center mb-3 sm:mb-4 group-hover:bg-blue-200 transition-colors duration-200">
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Create New Board</h3>
-                <p className="text-sm text-gray-500 text-center">Start organizing your tasks with a new board</p>
+                <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Create New Board</h3>
+                <p className="text-xs sm:text-sm text-gray-500 text-center">Start organizing your tasks with a new board</p>
               </div>
 
-              {/* Organization Selector */}
-                <div className="mb-6 flex items-center space-x-3">
-                <label htmlFor="org-select" className="text-gray-700 font-medium">
-                    Organization:
-                </label>
-                <select
-                    id="org-select"
-                    value={authStore.currentOrganization?.id || ''}
-                    onChange={(e) => {
-                    const selectedOrg = authStore.organizations.find(
-                        (org) => org.id === e.target.value
-                    );
-                    if (selectedOrg) {
-                        authStore.setCurrentOrganization(selectedOrg);
-                        authStore.fetchBoardsForOrganization(selectedOrg.id);
-                    }
-                    }}
-                    className="px-3 py-2 border rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              {/* Render actual boards */}
+              {currentBoards.map((board, index) => (
+                <div
+                  key={board.id}
+                  onClick={() => navigate(`/board/${board.id}`)}
+                  className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 p-4 sm:p-6 cursor-pointer group min-h-[160px] sm:min-h-[200px] flex flex-col"
+                  style={getBoardBackground(board)}
                 >
-                    {authStore.organizations.map((org) => (
-                    <option key={org.id} value={org.id}>
-                        {org.displayName}
-                    </option>
-                    ))}
-                </select>
+                  <div className="flex-1">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors duration-200">
+                      {board.name}
+                    </h3>
+                  </div>
+                  <div className="flex items-center justify-between mt-auto">
+                    <span className={`inline-block w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full ${getBoardColor(index)}`}></span>
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-blue-500 transition-colors duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
                 </div>
+              ))}
             </div>
           )}
 
@@ -118,9 +140,7 @@ const Boards: React.FC = observer(() => {
           {!isLoading && currentBoards.length === 0 && !error && (
             <div className="text-center py-12 mt-8">
               <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-12 h-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
+                <img src="/Icon.png" alt="Task Manager Icon" className="w-8 h-8 sm:w-10 sm:h-10" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 You Don't have any board in workspace

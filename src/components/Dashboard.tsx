@@ -16,7 +16,7 @@ const Dashboard: React.FC = observer(() => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0067A3]">
+    <div className="min-h-screen bg-[#0079BF]">
       <Header 
         title="Task Manager"
         currentPage="dashboard"
@@ -41,7 +41,7 @@ const Dashboard: React.FC = observer(() => {
         <div className="max-w-4xl mx-auto">
           {/* Loading State */}
           {authStore.isLoadingBoards ? (
-            <Loading message="Loading boards..." size="large" className="text-white" />
+            <Loading message="Loading" size="large" className="text-white" />
           ) : (
           /* Empty State or Boards Display */
           currentBoards.length === 0 ? (
@@ -68,7 +68,7 @@ const Dashboard: React.FC = observer(() => {
               {/* Create New Board Card */}
               <button
                 onClick={() => setIsCreateModalOpen(true)}
-                className="bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 min-h-[120px]"
+                className="bg-[#2FA9F1] hover:bg-[#2FA9F7] text-white p-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 min-h-[120px]"
               >
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -80,13 +80,10 @@ const Dashboard: React.FC = observer(() => {
               {currentBoards.map((board) => (
                 <div
                   key={board.id}
-                  className="bg-white rounded-lg p-4 cursor-pointer hover:shadow-lg transition-shadow duration-200 min-h-[120px]"
+                  className="flex items-center justify-center bg-white rounded-lg p-4 cursor-pointer hover:shadow-lg transition-shadow duration-200 min-h-[120px]"
                   onClick={() => handleBoardClick(board.id)}
                 >
-                  <h3 className="font-semibold text-gray-900 mb-2">{board.name}</h3>
-                  {board.desc && (
-                    <p className="text-gray-600 text-sm">{board.desc}</p>
-                  )}
+                  <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">{board.name}</h3>
                 </div>
               ))}
             </div>

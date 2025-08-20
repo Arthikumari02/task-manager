@@ -41,50 +41,106 @@ const Header: React.FC<HeaderProps> = observer(({
 
   return (
     <header className="bg-[#0067A3] shadow-sm sticky top-0 z-50">
-      <div className="px-4">
-        <div className="flex items-center justify-between h-12">
+      <div className="px-2 sm:px-4">
+        <div className="flex items-center justify-between h-12 sm:h-14">
           {/* Left Section - Home Icon and Organization Dropdown */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1 sm:space-x-2">
             <button 
               onClick={handleHomeClick}
-              className="bg-transparent p-2 hover:bg-blue-600 rounded transition-colors duration-200"
+              className="bg-transparent p-1.5 sm:p-2 hover:bg-[#0079BF] rounded transition-colors duration-200"
             >
-              <img src="/Home.png" alt="Home" className="w-6 h-6" />
+              <img src="/Home.png" alt="Home" className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
             
             {/* Organization Dropdown */}
             <div className="relative">
               <button
                 onClick={() => setIsOrgDropdownOpen(!isOrgDropdownOpen)}
-                className="flex items-center space-x-1 px-3 py-1.5 text-sm font-medium text-white bg-[#4E97C2] hover:bg-[#4E97C2] rounded transition-colors duration-200"
+                className="flex items-center space-x-1 px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium text-white bg-[#4E97C2] hover:bg-[#4E97C2] rounded transition-colors duration-200"
               >
-                <span>{authStore.currentOrganization?.displayName || 'Organization'}</span>
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <span className="truncate max-w-[80px] sm:max-w-none">{authStore.currentOrganization?.displayName || 'Organization'}</span>
+                <svg className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
 
-              {/* Organization Dropdown Menu */}
+              {/* Organization Dropdown Menu - Desktop */}
               {isOrgDropdownOpen && (
-                <div className="absolute left-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                  <div className="px-4 py-2 border-b border-gray-100">
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Organizations</p>
+                <>
+                  {/* Mobile Bottom Sheet */}
+                  <div className="fixed inset-0 z-50 md:hidden">
+                    {/* Backdrop */}
+                    <div 
+                      className="absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300"
+                      onClick={() => setIsOrgDropdownOpen(false)}
+                    />
+                    
+                    {/* Bottom Sheet */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-lg shadow-xl transform transition-transform duration-300 ease-out translate-y-0 animate-slide-up">
+                      {/* Handle Bar */}
+                      <div className="flex justify-center pt-3 pb-2">
+                        <div className="w-8 h-1 bg-gray-300 rounded-full"></div>
+                      </div>
+                      
+                      {/* Header */}
+                      <div className="flex items-center justify-between px-4 pb-3 border-b border-gray-200">
+                        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">WORKSPACE</h2>
+                        <button
+                          onClick={() => setIsOrgDropdownOpen(false)}
+                          className="p-1 hover:bg-gray-100 rounded-full"
+                        >
+                          <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                      
+                      {/* Workspace List */}
+                      <div className="max-h-96 overflow-y-auto">
+                        {authStore.organizations.map((org) => (
+                          <button
+                            key={org.id}
+                            onClick={() => handleOrganizationChange(org)}
+                            className={`w-full text-left p-4 flex items-center space-x-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 ${
+                              authStore.currentOrganization?.id === org.id ? 'bg-blue-50' : ''
+                            }`}
+                          >
+                            <div className={`w-8 h-8 rounded flex items-center justify-center text-white font-bold text-sm ${
+                              authStore.currentOrganization?.id === org.id ? 'bg-blue-500' : 'bg-blue-400'
+                            }`}>
+                              {org.displayName.charAt(0).toUpperCase()}
+                            </div>
+                            <span className="text-gray-900 font-medium">{org.displayName}</span>
+                          </button>
+                        ))}
+                      </div>
+                      
+                      {/* Bottom padding for safe area */}
+                      <div className="h-4"></div>
+                    </div>
                   </div>
-                  {authStore.organizations.map((org) => (
-                    <button
-                      key={org.id}
-                      onClick={() => handleOrganizationChange(org)}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center space-x-3 ${
-                        authStore.currentOrganization?.id === org.id ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
-                      }`}
-                    >
-                      <div className={`w-3 h-3 rounded-full ${
-                        authStore.currentOrganization?.id === org.id ? 'bg-blue-500' : 'bg-gray-300'
-                      }`}></div>
-                      <span>{org.displayName}</span>
-                    </button>
-                  ))}
-                </div>
+
+                  {/* Desktop Dropdown */}
+                  <div className="absolute left-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 hidden md:block">
+                    <div className="px-4 py-2 border-b border-gray-100">
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Organizations</p>
+                    </div>
+                    {authStore.organizations.map((org) => (
+                      <button
+                        key={org.id}
+                        onClick={() => handleOrganizationChange(org)}
+                        className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center space-x-3 ${
+                          authStore.currentOrganization?.id === org.id ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                        }`}
+                      >
+                        <div className={`w-3 h-3 rounded-full ${
+                          authStore.currentOrganization?.id === org.id ? 'bg-blue-500' : 'bg-gray-300'
+                        }`}></div>
+                        <span>{org.displayName}</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
           
@@ -92,21 +148,21 @@ const Header: React.FC<HeaderProps> = observer(({
           <div className="flex items-center">
             <button 
               onClick={() => setIsCreateBoardModalOpen(true)}
-              className="flex items-center space-x-2 px-4 py-1 text-white bg-[#4E97C2] hover:bg-[#4E97C2] rounded transition-colors duration-200"
+              className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-1 text-white bg-[#4E97C2] hover:bg-[#4E97C2] rounded transition-colors duration-200"
             >
-              <img src="/boardlogo.png" alt="Boards" className="w-6 h-6" />
-              <span className="text-sm font-medium">Boards</span>
+              <img src="/boardlogo.png" alt="Boards" className="w-5 h-5 sm:w-6 sm:h-6" />
+              <span className="text-xs sm:text-sm font-medium hidden sm:inline">Boards</span>
             </button>
           </div>
           </div>
 
-          <h1 className="text-lg font-bold text-white hidden sm:block">{title}</h1>
+          <h1 className="text-base sm:text-lg font-bold font-pacifico text-white hidden md:block">{title}</h1>
 
-          {/* Right Section - Title, Search, User, Logout */}
-          <div className="flex items-center space-x-3">
+          {/* Right Section - Search, User, Logout */}
+          <div className="flex items-center space-x-2 sm:space-x-3">
             {/* Search Bar */}
             {showSearch && (
-              <form onSubmit={handleSearch} className="hidden md:block">
+              <form onSubmit={handleSearch} className="hidden lg:block">
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -118,22 +174,21 @@ const Header: React.FC<HeaderProps> = observer(({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search"
-                    className="block w-48 pl-10 pr-3 py-1.5 border-0 rounded text-sm bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                    className="block w-32 sm:w-48 pl-10 pr-3 py-1.5 border-0 rounded text-sm bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-300"
                   />
                 </div>
               </form>
             )}
 
-             {/* Logout Button */}
             {/* Logout Button */}
             <button
               onClick={handleLogout}
-              className="text-white hover:bg-blue-700 px-3 py-1.5 rounded text-sm font-medium transition duration-200"
+              className="text-white hover:bg-blue-700 px-2 sm:px-3 py-1 sm:py-1.5 rounded text-xs sm:text-sm font-medium transition duration-200"
             >
               Log Out
             </button>
             {/* User Avatar (non-clickable) */}
-            <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-blue-600 text-sm font-medium">
+            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-white rounded-full flex items-center justify-center text-blue-600 text-xs sm:text-sm font-medium">
               WD
             </div>
           </div>

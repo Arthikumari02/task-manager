@@ -1,4 +1,4 @@
-import { makeAutoObservable, runInAction } from 'mobx';
+import { makeAutoObservable, runInAction, action } from 'mobx';
 
 interface Organization {
   id: string;
@@ -45,6 +45,10 @@ class AuthStore {
   boards: Board[] = [];
   isLoadingBoards: boolean = false;
   boardsError: string | null = null;
+  isCreatingBoard: boolean = false;
+  isCreatingCard: boolean = false;
+  isCreatingList: boolean = false;
+  isSwitchingOrganization: boolean = false;
   
   // Board lists and cards state
   boardLists: { [boardId: string]: TrelloList[] } = {};
@@ -56,7 +60,7 @@ class AuthStore {
     makeAutoObservable(this);
     this.clientId = process.env.REACT_APP_TRELLO_API_KEY || process.env.REACT_APP_TRELLO_CLIENT_ID || null;
     this.loadTokenFromStorage();
-    this.initializeSampleData();
+    this.initializeData();
   }
 
   get isAuthenticated(): boolean {
@@ -82,13 +86,21 @@ class AuthStore {
     this.currentOrganization = null;
     this.organizations = [];
     this.boards = [];
+    this.boardLists = {};
+    this.boardCards = {};
+    this.boardsError = null;
+    this.listsError = null;
     localStorage.removeItem('trello_token');
+    // Clear all data after logout
+    this.organizations = [];
+    this.currentOrganization = null;
+    this.boards = [];
   };
 
-  setCurrentOrganization = async (organization: Organization) => {
+  setCurrentOrganization = action(async (organization: Organization) => {
     this.currentOrganization = organization;
     await this.fetchBoardsForOrganization(organization.id);
-  };
+  });
 
   fetchBoardsForOrganization = async (organizationId: string) => {
     if (!this.token || !this.clientId) return;
@@ -136,6 +148,8 @@ class AuthStore {
   addBoard = async (name: string, description: string = ''): Promise<Board | null> => {
     if (!this.currentOrganization || !this.token || !this.clientId) return null;
 
+    this.isCreatingBoard = true;
+
     try {
       const response = await fetch(
         `https://api.trello.com/1/boards/?key=${this.clientId}&token=${this.token}`,
@@ -179,6 +193,8 @@ class AuthStore {
       console.error('Error creating board:', error);
       this.boardsError = error instanceof Error ? error.message : 'Failed to create board';
       return null;
+    } finally {
+      this.isCreatingBoard = false;
     }
   };
 
@@ -217,6 +233,8 @@ class AuthStore {
   createList = async (boardId: string, name: string): Promise<TrelloList | null> => {
     if (!this.token || !this.clientId) return null;
 
+    this.isCreatingList = true;
+
     try {
       const response = await fetch(
         `https://api.trello.com/1/boards/${boardId}/lists`,
@@ -252,12 +270,16 @@ class AuthStore {
       console.error('Error creating list:', error);
       this.listsError = error instanceof Error ? error.message : 'Failed to create list';
       return null;
+    } finally {
+      this.isCreatingList = false;
     }
   };
 
   // Create a new card in a list
   createCard = async (listId: string, name: string): Promise<TrelloCard | null> => {
     if (!this.token || !this.clientId) return null;
+
+    this.isCreatingCard = true;
 
     try {
       const response = await fetch(
@@ -295,6 +317,8 @@ class AuthStore {
     } catch (error) {
       console.error('Error creating card:', error);
       return null;
+    } finally {
+      this.isCreatingCard = false;
     }
   };
 
@@ -330,6 +354,18 @@ class AuthStore {
     }
   };
 
+  private initializeData = async () => {
+    if (this.token && this.clientId) {
+      // If we have a token, fetch real organizations and boards
+      await this.fetchUserOrganizations();
+    } else {
+      // If no token, clear data
+      this.organizations = [];
+      this.currentOrganization = null;
+      this.boards = [];
+    }
+  };
+
   fetchUserOrganizations = async () => {
     if (!this.token || !this.clientId) return;
 
@@ -358,25 +394,12 @@ class AuthStore {
 
     } catch (error) {
       console.error('Error fetching organizations:', error);
-      // Fallback to sample data if API fails
-      this.initializeSampleData();
+      this.organizations = [];
+      this.currentOrganization = null;
+      this.boards = [];
     }
   };
 
-  private initializeSampleData = () => {
-    // Sample organizations as fallback
-    this.organizations = [
-      { id: 'org_1', name: 'personal', displayName: 'Personal Workspace' },
-      { id: 'org_2', name: 'company', displayName: 'Company Projects' },
-      { id: 'org_3', name: 'freelance', displayName: 'Freelance Work' }
-    ];
-    
-    // Set default organization
-    this.currentOrganization = this.organizations[0];
-    
-    // Start with empty boards - they'll be fetched from API
-    this.boards = [];
-  };
 }
 
 export const authStore = new AuthStore();
