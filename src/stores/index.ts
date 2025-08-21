@@ -1,15 +1,14 @@
-// Main store manager
-export { storeManager } from './StoreManager';
+// Base store
+export { BaseStore } from './BaseStore';
 
 // Individual stores
-export { authStore } from './auth/AuthStore';
-export { default as OrganizationStore } from './organization/OrganizationStore';
-export { default as BoardStore } from './board/BoardStore';
-export { default as ListStore } from './list/ListStore';
-export { default as CardStore } from './card/CardStore';
+export { OrganizationStore } from './OrganizationStore';
+export { BoardStore } from './BoardStore';
+export { ListStore } from './ListStore';
+export { CardStore } from './CardStore';
 
 // Store types
-export type { default as OrganizationStoreType } from './organization/OrganizationStore';
-export type { default as BoardStoreType } from './board/BoardStore';
-export type { default as ListStoreType } from './list/ListStore';
-export type { default as CardStoreType } from './card/CardStore';
+export type { OrganizationStoreState } from './OrganizationStore';
+export type { BoardStoreState } from './BoardStore';
+export type { ListStoreState } from './ListStore';
+export type { CardStoreState } from './CardStore';

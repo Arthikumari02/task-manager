@@ -22,7 +22,7 @@ const BoardView: React.FC = observer(() => {
 
   return (
     <div className="min-h-screen bg-[#0079BF]">
-      <Header 
+      <Header
         title="Task Manager"
         currentPage="boards"
         showSearch={true}
@@ -31,7 +31,7 @@ const BoardView: React.FC = observer(() => {
 
       <main className="px-2 sm:px-4 py-4 sm:py-6">
         <BoardHeader boardName={boardName} />
-        
+
         {isLoading ? (
           <Loading message="Loading" size="large" className="text-white" />
         ) : (

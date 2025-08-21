@@ -14,11 +14,9 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     <AuthProvider>
       <OrganizationProvider>
         <BoardProvider>
-          <ListProvider>
-            <CardProvider>
-              {children}
-            </CardProvider>
-          </ListProvider>
+          <CardProvider>
+            {children}
+          </CardProvider>
         </BoardProvider>
       </OrganizationProvider>
     </AuthProvider>

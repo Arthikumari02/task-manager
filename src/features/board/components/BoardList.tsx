@@ -3,12 +3,13 @@ import { Droppable } from '@hello-pangea/dnd';
 import { BoardListProps } from '../../../types';
 import TaskCard from './TaskCard';
 import AddTaskForm from './AddTaskForm';
+import { CardProvider } from '../../../contexts';
 
 const BoardList: React.FC<BoardListProps> = ({ list, cards, onTaskAdded, onRenameList, onTaskRename }) => {
   const [showAddTaskForm, setShowAddTaskForm] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [title, setTitle] = useState(list.name);
-  
+
   const handleTaskAdded = () => {
     setShowAddTaskForm(false);
     onTaskAdded();
@@ -45,8 +46,8 @@ const BoardList: React.FC<BoardListProps> = ({ list, cards, onTaskAdded, onRenam
 
   return (
     <div className="bg-[#F4F5F7] rounded-sm px-3 py-2 w-64 flex-shrink-0 min-h-[80px] h-fit">
-       {/* List Title */}
-       {isEditingTitle ? (
+      {/* List Title */}
+      {isEditingTitle ? (
         <input
           type="text"
           value={title}
@@ -66,29 +67,30 @@ const BoardList: React.FC<BoardListProps> = ({ list, cards, onTaskAdded, onRenam
       )}
 
       {/* Tasks */}
-      <Droppable droppableId={list.id} type="card">
-        {(provided, snapshot) => (
-          <div
-            ref={provided.innerRef}
-            {...provided.droppableProps}
-            className={`space-y-2 mb-2 min-h-[20px] transition-colors ${
-              snapshot.isDraggingOver ? 'bg-blue-50 rounded' : ''
-            }`}
-          >
-            {listCards.map((card, index) => (
-              <TaskCard
-                key={card.id}
-                id={card.id}
-                name={card.name}
-                desc={card.desc}
-                index={index}
-                onTaskRename={onTaskRename}
-              />
-            ))}
-            {provided.placeholder}
-          </div>
-        )}
-      </Droppable>
+      <CardProvider>
+        <Droppable droppableId={list.id} type="card">
+          {(provided, snapshot) => (
+            <div
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+              className={`space-y-2 mb-2 min-h-[20px] transition-colors ${snapshot.isDraggingOver ? 'bg-blue-50 rounded' : ''
+                }`}
+            >
+              {listCards.map((card, index) => (
+                <TaskCard
+                  key={card.id}
+                  id={card.id}
+                  name={card.name}
+                  desc={card.desc}
+                  index={index}
+                  onTaskRename={onTaskRename}
+                />
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </CardProvider>
 
       {/* Add Task */}
       {showAddTaskForm ? (

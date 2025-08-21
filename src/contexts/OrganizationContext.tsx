@@ -1,104 +1,26 @@
-import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
-import { useAuth, useLogoutListener } from './AuthContext';
-import { TrelloOrganization } from '../types';
+import React, { createContext, useContext, useRef } from 'react';
+import OrganizationStore from '../stores/organization/OrganizationStore';
 
-interface OrganizationContextType {
-  organizations: TrelloOrganization[];
-  currentOrganization: TrelloOrganization | null;
-  isLoading: boolean;
-  error: string | null;
-  isSwitching: boolean;
-  fetchOrganizations: () => Promise<void>;
-  setCurrentOrganization: (organization: TrelloOrganization) => void;
-}
+const OrganizationContext = createContext<OrganizationStore | undefined>(undefined);
 
-const OrganizationContext = createContext<OrganizationContextType | undefined>(undefined);
-
-interface OrganizationProviderProps {
-  children: ReactNode;
-}
-
-export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ children }) => {
-  const { token, clientId } = useAuth();
-  const [organizations, setOrganizations] = useState<TrelloOrganization[]>([]);
-  const [currentOrganization, setCurrentOrganizationState] = useState<TrelloOrganization | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isSwitching, setIsSwitching] = useState(false);
-
-  // Reset data on logout
-  const resetData = useCallback(() => {
-    setOrganizations([]);
-    setCurrentOrganizationState(null);
-    setIsLoading(false);
-    setError(null);
-    setIsSwitching(false);
-  }, []);
-
-  useLogoutListener(resetData);
-
-  const fetchOrganizations = useCallback(async () => {
-    if (!token || !clientId) return;
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch(
-        `https://api.trello.com/1/members/me/organizations?key=${clientId}&token=${token}`
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch organizations: ${response.statusText}`);
-      }
-
-      const trelloOrgs = await response.json();
-      
-      const fetchedOrganizations = trelloOrgs.map((org: any) => ({
-        id: org.id,
-        name: org.name,
-        displayName: org.displayName || org.name,
-        desc: org.desc || '',
-        url: org.url || ''
-      }));
-
-      setOrganizations(fetchedOrganizations);
-
-      // Set first organization as default if none selected
-      if (fetchedOrganizations.length > 0 && !currentOrganization) {
-        setCurrentOrganizationState(fetchedOrganizations[0]);
-      }
-
-    } catch (err) {
-      console.error('Error fetching organizations:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch organizations');
-      setOrganizations([]);
-      setCurrentOrganizationState(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [token, clientId, currentOrganization]);
-
-  const setCurrentOrganization = useCallback((organization: TrelloOrganization) => {
-    setIsSwitching(true);
-    setCurrentOrganizationState(organization);
-    setIsSwitching(false);
-  }, []);
-
-  const value: OrganizationContextType = {
-    organizations,
-    currentOrganization,
-    isLoading,
-    error,
-    isSwitching,
-    fetchOrganizations,
-    setCurrentOrganization,
+export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const getAuthData = () => {
+    const token = localStorage.getItem('trello_token');
+    const clientId = localStorage.getItem('trello_clientId');
+    return { token, clientId };
   };
 
-  return <OrganizationContext.Provider value={value}>{children}</OrganizationContext.Provider>;
+  // pass getAuthData into CardStore constructor
+  const organizationStoreRef = useRef(new OrganizationStore(getAuthData));
+
+  return (
+    <OrganizationContext.Provider value={organizationStoreRef.current}>
+      {children}
+    </OrganizationContext.Provider>
+  );
 };
 
-export const useOrganizations = (): OrganizationContextType => {
+export const useOrganizations = (): OrganizationStore => {
   const context = useContext(OrganizationContext);
   if (context === undefined) {
     throw new Error('useOrganizations must be used within an OrganizationProvider');
