@@ -1,19 +1,36 @@
-import React, { useState } from 'react';
-import { observer } from 'mobx-react-lite';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from './Header';
 import CreateBoardModal from './CreateBoardModal';
 import Loading from './Loading';
-import { authStore } from '../stores/AuthStore';
+import { useOrganizations, useBoards } from '../contexts';
+import { TrelloBoard } from '../types';
 
-const Dashboard: React.FC = observer(() => {
+const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const currentBoards = authStore.currentOrganizationBoards;
+  
+  const { organizations, currentOrganization, fetchOrganizations, isLoading: orgLoading } = useOrganizations();
+  const { boards, fetchBoardsForOrganization, isLoading: boardsLoading } = useBoards();
+
+  // Initialize data on component mount
+  useEffect(() => {
+    fetchOrganizations();
+  }, [fetchOrganizations]);
+
+  // Fetch boards when current organization changes
+  useEffect(() => {
+    if (currentOrganization) {
+      fetchBoardsForOrganization(currentOrganization.id);
+    }
+  }, [currentOrganization, fetchBoardsForOrganization]);
 
   const handleBoardClick = (boardId: string) => {
     navigate(`/board/${boardId}`);
   };
+
+  const isLoading = orgLoading || boardsLoading;
+  const currentBoards = boards;
 
   return (
     <div className="min-h-screen bg-[#0079BF]">
@@ -32,7 +49,7 @@ const Dashboard: React.FC = observer(() => {
               <span className="text-white font-bold text-lg">W</span>
             </div>
             <h1 className="text-white text-xl font-semibold">
-              {authStore.currentOrganization?.displayName || 'William John\'s Workspace'}
+              {currentOrganization?.displayName || 'William John\'s Workspace'}
             </h1>
           </div>
         </div>
@@ -40,7 +57,7 @@ const Dashboard: React.FC = observer(() => {
         {/* Boards Section */}
         <div className="max-w-6xl mx-auto">
           {/* Loading State */}
-          {authStore.isLoadingBoards ? (
+          {isLoading ? (
             <Loading message="Loading" size="large" className="text-white" />
           ) : (
           /* Empty State or Boards Display */
@@ -78,7 +95,7 @@ const Dashboard: React.FC = observer(() => {
               {/* Boards Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* Existing Boards */}
-                {currentBoards.map((board) => (
+                {currentBoards.map((board: TrelloBoard) => (
                   <div
                     key={board.id}
                     className="bg-white rounded-sm p-6 cursor-pointer hover:shadow-lg transition-all duration-200 min-h-[120px] flex items-center justify-center"
@@ -112,6 +129,6 @@ const Dashboard: React.FC = observer(() => {
       />
     </div>
   );
-});
+};
 
 export default Dashboard;

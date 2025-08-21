@@ -1,15 +1,16 @@
 import React from 'react';
-import { observer } from 'mobx-react-lite';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { authStore } from './stores/AuthStore';
-import Login from './components/auth/Login';
+import { AppProvider, useAuth } from './contexts';
+import { Login } from './features/auth';
 import Dashboard from './components/Dashboard';
-import BoardView from './components/BoardView';
+import { BoardView } from './features/board';
 import PageNotFound from './components/PageNotFound';
 import './index.css';
 
-const App: React.FC = observer(() => {
-  if (!authStore.isAuthenticated) {
+const AppContent: React.FC = () => {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
     return <Login />;
   }
 
@@ -22,6 +23,14 @@ const App: React.FC = observer(() => {
       </Routes>
     </Router>
   );
-});
+};
+
+const App: React.FC = () => {
+  return (
+    <AppProvider>
+      <AppContent />
+    </AppProvider>
+  );
+};
 
 export default App;
