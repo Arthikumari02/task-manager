@@ -1,9 +1,8 @@
-import { makeAutoObservable, runInAction } from 'mobx';
-import { TrelloList } from '../../types';
+import { makeAutoObservable } from 'mobx';
 import { ListModel } from '../../models';
 
 class ListStore {
-  boardLists: { [boardId: string]: ListModel[] } = {};
+  private listsMap: Map<string, ListModel> = new Map();
   isLoading: boolean = false;
   error: string | null = null;
   isCreating: boolean = false;
@@ -12,7 +11,34 @@ class ListStore {
     makeAutoObservable(this);
   }
 
-  fetchLists = async (boardId: string): Promise<void> => {
+  // Computed values for better performance and clean code
+  get allLists(): ListModel[] {
+    return Array.from(this.listsMap.values());
+  }
+
+  get listCount(): number {
+    return this.listsMap.size;
+  }
+
+  getListsForBoard = (boardId: string): ListModel[] => {
+    return this.allLists
+      .filter(l => l.boardId === boardId && !l.closed)
+      .sort((a, b) => (a.pos || 0) - (b.pos || 0));
+  };
+
+  getListsMap = (boardId: string): Map<string, ListModel> => {
+    const listsMap = new Map<string, ListModel>();
+    this.getListsForBoard(boardId).forEach(list => {
+      listsMap.set(list.id, list);
+    });
+    return listsMap;
+  };
+
+  getListCountForBoard = (boardId: string): number => {
+    return this.getListsForBoard(boardId).length;
+  };
+
+  fetchLists = async (boardId: string, onSuccess: (lists: ListModel[]) => void): Promise<void> => {
     const { token, clientId } = this.getAuthData();
     if (!token || !clientId || !boardId) return;
 
@@ -30,29 +56,26 @@ class ListStore {
 
       const trelloLists = await response.json();
 
-      runInAction(() => {
-        this.boardLists[boardId] = trelloLists
-          .filter((list: any) => !list.closed)
-          .map((list: any) => new ListModel({
-            id: list.id,
-            name: list.name,
-            boardId: boardId,
-            closed: list.closed || false,
-            pos: list.pos || 0
-          }))
-          .sort((a: ListModel, b: ListModel) => a.pos - b.pos); // Sort by position
+      const listModels = trelloLists.map((list: any) => {
+        const listModel = new ListModel({
+          id: list.id,
+          name: list.name,
+          boardId: boardId,
+          closed: list.closed || false,
+          pos: list.pos || 0
+        });
+
+        this.listsMap.set(listModel.id, listModel);
+        return listModel;
       });
+
+      onSuccess(listModels);
 
     } catch (err) {
       console.error('Error fetching lists:', err);
-      runInAction(() => {
-        this.error = err instanceof Error ? err.message : 'Failed to fetch lists';
-        this.boardLists[boardId] = [];
-      });
+      this.error = err instanceof Error ? err.message : 'Failed to fetch lists';
     } finally {
-      runInAction(() => {
-        this.isLoading = false;
-      });
+      this.isLoading = false;
     }
   };
 
@@ -92,27 +115,16 @@ class ListStore {
         pos: newList.pos || 0
       });
 
-      runInAction(() => {
-        if (!this.boardLists[boardId]) {
-          this.boardLists[boardId] = [];
-        }
-        this.boardLists[boardId].push(listToAdd);
-        // Sort after adding
-        this.boardLists[boardId].sort((a, b) => a.pos - b.pos);
-      });
+      this.listsMap.set(listToAdd.id, listToAdd);
 
       return listToAdd;
 
     } catch (error) {
       console.error('Error creating list:', error);
-      runInAction(() => {
-        this.error = error instanceof Error ? error.message : 'Failed to create list';
-      });
+      this.error = error instanceof Error ? error.message : 'Failed to create list';
       return null;
     } finally {
-      runInAction(() => {
-        this.isCreating = false;
-      });
+      this.isCreating = false;
     }
   };
 
@@ -120,41 +132,31 @@ class ListStore {
     const { token, clientId } = this.getAuthData();
     if (!token || !clientId) return;
 
-    // Find the list model and use its updateName method
-    let targetList: ListModel | null = null;
-    Object.keys(this.boardLists).forEach(boardId => {
-      const list = this.boardLists[boardId].find(list => list.id === listId);
-      if (list) {
-        targetList = list;
-      }
-    });
+    const targetList = this.listsMap.get(listId) || null;
 
     if (targetList) {
-      await (targetList as ListModel).updateName(newName, { token, clientId });
+      await targetList.updateNameOnServer(newName, { token, clientId });
     }
   };
 
   reorderLists = async (boardId: string, sourceIndex: number, destinationIndex: number): Promise<void> => {
-    console.log('Reordering lists:', { boardId, sourceIndex, destinationIndex });
+    const lists = this.getListsForBoard(boardId).slice();
 
-    if (!this.boardLists[boardId] || sourceIndex === destinationIndex) {
-      console.log('No lists found or same position, aborting');
+    if (lists.length === 0 || sourceIndex === destinationIndex) {
       return;
     }
 
-    const lists = [...this.boardLists[boardId]];
     const [movedList] = lists.splice(sourceIndex, 1);
     lists.splice(destinationIndex, 0, movedList);
 
-    // Update local state immediately for better UX
-    runInAction(() => {
-      this.boardLists[boardId] = lists;
+    // Update local order: adjust pos hints immediately
+    lists.forEach((list, idx) => {
+      list.pos = list.pos ?? 0;
     });
 
     // Calculate new position for Trello API
     const { token, clientId } = this.getAuthData();
     if (!token || !clientId) {
-      console.log('No auth data available');
       return;
     }
 
@@ -162,19 +164,14 @@ class ListStore {
       let newPos: number | string;
 
       if (destinationIndex === 0) {
-        // Moving to the beginning
         newPos = 'top';
       } else if (destinationIndex === lists.length - 1) {
-        // Moving to the end
         newPos = 'bottom';
       } else {
-        // Moving to middle - calculate position between adjacent lists
         const prevList = lists[destinationIndex - 1];
         const nextList = lists[destinationIndex + 1];
         newPos = (prevList.pos + nextList.pos) / 2;
       }
-
-      console.log('Updating list position:', { listId: movedList.id, newPos });
 
       const response = await fetch(
         `https://api.trello.com/1/lists/${movedList.id}?key=${clientId}&token=${token}`,
@@ -194,34 +191,51 @@ class ListStore {
       const updatedList = await response.json();
 
       // Update the list's position with the actual value returned from Trello
-      runInAction(() => {
-        const listIndex = this.boardLists[boardId].findIndex(list => list.id === movedList.id);
-        if (listIndex !== -1) {
-          this.boardLists[boardId][listIndex].pos = updatedList.pos;
-        }
-        // Re-sort to ensure correct order
-        this.boardLists[boardId].sort((a, b) => a.pos - b.pos);
-      });
+      const target = this.listsMap.get(movedList.id);
+      if (target) {
+        target.pos = updatedList.pos;
+      }
 
     } catch (error) {
       console.error('Error reordering lists:', error);
-      runInAction(() => {
-        this.error = error instanceof Error ? error.message : 'Failed to reorder lists';
-      });
-      // Revert on error
-      await this.fetchLists(boardId);
+      this.error = error instanceof Error ? error.message : 'Failed to reorder lists';
+      // Re-fetch to restore
+      await this.fetchLists(boardId, () => {});
     }
   };
 
   // Alias for compatibility with useBoardData hook
   fetchBoardLists = this.fetchLists;
 
-  getListsForBoard = (boardId: string): ListModel[] => {
-    return this.boardLists[boardId] || [];
+  getListById = (listId: string): ListModel | null => {
+    return this.listsMap.get(listId) || null;
   };
 
+  addList = (list: ListModel) => {
+    this.listsMap.set(list.id, list);
+  };
+
+  removeList = (listId: string) => {
+    this.listsMap.delete(listId);
+  }
+
+  // Card relationship methods
+  addCardToList = (listId: string, cardId: string): void => {
+    const list = this.listsMap.get(listId);
+    if (list) {
+      list.addCardId(cardId);
+    }
+  }
+
+  removeCardFromList = (listId: string, cardId: string): void => {
+    const list = this.listsMap.get(listId);
+    if (list) {
+      list.removeCardId(cardId);
+    }
+  }
+
   reset = () => {
-    this.boardLists = {};
+    this.listsMap.clear();
     this.error = null;
     this.isLoading = false;
     this.isCreating = false;

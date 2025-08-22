@@ -5,6 +5,7 @@ export class BoardModel extends BaseModel {
   closed: boolean;
   url: string;
   organizationId: string;
+  private listIds: Set<string> = new Set();
 
   constructor(data: {
     id: string;
@@ -21,6 +22,28 @@ export class BoardModel extends BaseModel {
     this.organizationId = data.organizationId;
   }
 
+  // List ID Management Methods
+  addListId(listId: string): void {
+    this.listIds.add(listId);
+  }
+
+  removeListId(listId: string): boolean {
+    return this.listIds.delete(listId);
+  }
+
+  hasListId(listId: string): boolean {
+    return this.listIds.has(listId);
+  }
+
+  getListIds(): string[] {
+    return Array.from(this.listIds);
+  }
+
+  getListCount(): number {
+    return this.listIds.size;
+  }
+
+  // Board Operations
   async updateNameOnServer(newName: string, authData: { token: string; clientId: string }): Promise<boolean> {
     try {
       const response = await fetch(
@@ -33,8 +56,14 @@ export class BoardModel extends BaseModel {
           body: JSON.stringify({ name: newName })
         }
       );
-      return response.ok;
+      
+      if (response.ok) {
+        this.name = newName;
+        return true;
+      }
+      return false;
     } catch (error) {
+      console.error('Error updating board name:', error);
       return false;
     }
   }

@@ -82,6 +82,7 @@ const AddListForm: React.FC<AddListFormProps> = observer(({
         className="w-full p-1.5 border rounded text-sm mb-2"
         autoFocus
         onKeyDown={handleKeyDown}
+        disabled={isCreating}
       />
       <div className="flex space-x-2">
         <button

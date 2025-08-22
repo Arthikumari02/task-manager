@@ -11,7 +11,7 @@ const Dashboard: React.FC = observer(() => {
   const navigate = useNavigate();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   
-  const { organizations, currentOrganization, fetchOrganizations, isLoading: orgLoading } = useOrganizations();
+  const { currentOrganization, fetchOrganizations, isLoading: orgLoading } = useOrganizations();
   const { boards, fetchBoardsForOrganization, isLoading: boardsLoading } = useBoards();
 
   // Initialize data on component mount

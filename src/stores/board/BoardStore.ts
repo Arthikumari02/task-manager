@@ -1,14 +1,25 @@
-import { makeAutoObservable, runInAction } from 'mobx';
+import { makeAutoObservable } from 'mobx';
 import { TrelloBoard } from '../../types';
+import { BoardModel } from '../../models';
 
 class BoardStore {
   boards: TrelloBoard[] = [];
+  private boardModels: Map<string, BoardModel> = new Map();
   isLoading: boolean = false;
   error: string | null = null;
   isCreating: boolean = false;
 
   constructor(private getAuthData: () => { token: string | null; clientId: string | null }) {
     makeAutoObservable(this);
+  }
+
+  // Computed values for better performance and clean code
+  get boardCount(): number {
+    return this.boardModels.size;
+  }
+
+  get currentOrganizationBoards(): TrelloBoard[] {
+    return this.boards;
   }
 
   fetchBoards = async (organizationId: string): Promise<void> => {
@@ -29,28 +40,35 @@ class BoardStore {
 
       const trelloBoards = await response.json();
       
-      runInAction(() => {
-        this.boards = trelloBoards.map((board: any) => ({
-          id: board.id,
-          name: board.name,
-          desc: board.desc || '',
-          organizationId: organizationId,
-          closed: board.closed || false,
-          url: board.url || '',
-          prefs: board.prefs || {}
-        }));
+      this.boards = trelloBoards.map((board: any) => ({
+        id: board.id,
+        name: board.name,
+        desc: board.desc || '',
+        organizationId: organizationId,
+        closed: board.closed || false,
+        url: board.url || '',
+        prefs: board.prefs || {}
+      }));
+
+      // Create BoardModel instances
+      this.boards.forEach(boardData => {
+        const boardModel = new BoardModel({
+          id: boardData.id,
+          name: boardData.name,
+          desc: boardData.desc,
+          closed: boardData.closed,
+          url: boardData.url,
+          organizationId: boardData.organizationId
+        });
+        this.boardModels.set(boardData.id, boardModel);
       });
 
     } catch (err) {
       console.error('Error fetching boards:', err);
-      runInAction(() => {
-        this.error = err instanceof Error ? err.message : 'Failed to fetch boards';
-        this.boards = [];
-      });
+      this.error = err instanceof Error ? err.message : 'Failed to fetch boards';
+      this.boards = [];
     } finally {
-      runInAction(() => {
-        this.isLoading = false;
-      });
+      this.isLoading = false;
     }
   };
 
@@ -94,34 +112,55 @@ class BoardStore {
         prefs: newBoard.prefs || {}
       };
 
-      runInAction(() => {
-        this.boards.push(boardToAdd);
+      this.boards.push(boardToAdd);
+      
+      // Create BoardModel instance
+      const boardModel = new BoardModel({
+        id: boardToAdd.id,
+        name: boardToAdd.name,
+        desc: boardToAdd.desc,
+        closed: boardToAdd.closed,
+        url: boardToAdd.url,
+        organizationId: boardToAdd.organizationId
       });
+      this.boardModels.set(boardToAdd.id, boardModel);
       
       return boardToAdd;
 
     } catch (error) {
       console.error('Error creating board:', error);
-      runInAction(() => {
-        this.error = error instanceof Error ? error.message : 'Failed to create board';
-      });
+      this.error = error instanceof Error ? error.message : 'Failed to create board';
       return null;
     } finally {
-      runInAction(() => {
-        this.isCreating = false;
-      });
+      this.isCreating = false;
     }
   };
 
   // Alias for compatibility
   fetchBoardsForOrganization = this.fetchBoards;
 
-  get currentOrganizationBoards(): TrelloBoard[] {
-    return this.boards;
+  // BoardModel access methods
+  getBoardById = (boardId: string): BoardModel | undefined => {
+    return this.boardModels.get(boardId);
+  }
+
+  addListToBoard = (boardId: string, listId: string): void => {
+    const board = this.boardModels.get(boardId);
+    if (board) {
+      board.addListId(listId);
+    }
+  }
+
+  removeListFromBoard = (boardId: string, listId: string): void => {
+    const board = this.boardModels.get(boardId);
+    if (board) {
+      board.removeListId(listId);
+    }
   }
 
   reset = () => {
     this.boards = [];
+    this.boardModels.clear();
     this.error = null;
     this.isLoading = false;
     this.isCreating = false;

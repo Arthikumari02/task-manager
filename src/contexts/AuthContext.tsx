@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useRef, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useRef, useEffect } from 'react';
 import authStore, { AuthStore } from '../stores/auth/AuthStore';
 
 // Event system for logout notifications

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode, useRef } from 'react';
+import React, { createContext, useContext, useRef } from 'react';
 import BoardStore from '../stores/board/BoardStore';
 
 const BoardContext = createContext<BoardStore | undefined>(undefined);

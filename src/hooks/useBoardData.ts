@@ -6,33 +6,20 @@ import { ListModel } from '../models';
 export const useBoardData = (boardId: string | undefined): UseBoardDataReturn => {
   const { token, clientId } = useAuth();
   const { boards } = useBoards();
-  const { boardLists, fetchBoardLists } = useLists();
-  const { boardCards, fetchBoardCards } = useCards();
+  const { fetchBoardLists, getListsMap, getListsForBoard } = useLists();
+  const { fetchBoardCards, getCardsByListMap, getCardsForBoard } = useCards();
   const { organizations, fetchOrganizations } = useOrganizations();
   
   const [boardName, setBoardName] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
 
-  // Properly map board → lists → cards hierarchy using Map for efficient lookups
-  const lists: ListModel[] = boardId ? (boardLists[boardId] || []) : [];
-  const cards: TrelloCard[] = boardId ? (boardCards[boardId] || []) : [];
+  // Use enhanced store methods for efficient Map-based lookups
+  const lists: ListModel[] = boardId ? getListsForBoard(boardId) : [];
+  const cards: TrelloCard[] = boardId ? getCardsForBoard(boardId) : [];
   
-  // Create hierarchical Maps for efficient O(1) lookups
-  const listsMap = new Map(lists.map(list => [list.id, list]));
-  const cardsByListMap = new Map<string, TrelloCard[]>();
-  
-  // Group cards by listId using Map for efficient access
-  cards.forEach(card => {
-    if (!cardsByListMap.has(card.listId)) {
-      cardsByListMap.set(card.listId, []);
-    }
-    cardsByListMap.get(card.listId)!.push(card);
-  });
-  
-  // Sort cards within each list by position
-  cardsByListMap.forEach(listCards => {
-    listCards.sort((a, b) => (a.pos || 0) - (b.pos || 0));
-  });
+  // Use store methods for efficient Map-based lookups
+  const listsMap = boardId ? getListsMap(boardId) : new Map();
+  const cardsByListMap = boardId ? getCardsByListMap(boardId) : new Map();
   
   // Sort lists by position (create new array to avoid MobX mutation error)
   const sortedLists = lists.slice().sort((a, b) => (a.pos || 0) - (b.pos || 0));
@@ -72,7 +59,7 @@ export const useBoardData = (boardId: string | undefined): UseBoardDataReturn =>
 
         // Fetch lists and cards for the board
         await Promise.all([
-          fetchBoardLists(boardId),
+          fetchBoardLists(boardId, () => {}),
           fetchBoardCards(boardId)
         ]);
         

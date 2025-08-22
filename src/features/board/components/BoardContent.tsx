@@ -38,10 +38,7 @@ const BoardContent: React.FC<ExtendedBoardContentProps> = observer(({
   };
 
   const handleDragEnd = (result: DropResult) => {
-    console.log('Drag end result:', result);
-
     if (!result.destination || !boardId) {
-      console.log('No destination or boardId, aborting drag');
       return;
     }
 
@@ -54,15 +51,9 @@ const BoardContent: React.FC<ExtendedBoardContentProps> = observer(({
     }
 
     if (type === 'list') {
-      console.log('Handling list reorder:', {
-        boardId,
-        sourceIndex: source.index,
-        destinationIndex: destination.index
-      });
       // Handle list reordering
       reorderLists(boardId, source.index, destination.index);
     } else if (type === 'card') {
-      console.log('Moving card:', { draggableId, type });
       // Handle card movement
       const sourceListId = source.droppableId;
       const destinationListId = destination.droppableId;
@@ -76,9 +67,6 @@ const BoardContent: React.FC<ExtendedBoardContentProps> = observer(({
       }
     }
   };
-
-  // Debug: Log the lists being rendered
-  console.log('BoardContent rendering with lists:', lists?.length || 0, lists);
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
@@ -127,7 +115,7 @@ const BoardContent: React.FC<ExtendedBoardContentProps> = observer(({
                       >
                         <BoardList
                           list={list}
-                          cards={cardsByListMap?.get(list.id) || cards.filter(card => card.listId === list.id)}
+                          cards={cardsByListMap?.get(list.id) || []}
                           onTaskAdded={onTaskAdded}
                           onRenameList={handleRenameList}
                           onTaskRename={handleRenameTask}

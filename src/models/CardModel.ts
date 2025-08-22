@@ -27,6 +27,7 @@ export class CardModel extends BaseModel {
     this.url = data.url;
   }
 
+  // Card Operations
   async updateNameOnServer(newName: string, authData: { token: string; clientId: string }): Promise<boolean> {
     try {
       const response = await fetch(
@@ -39,9 +40,78 @@ export class CardModel extends BaseModel {
           body: JSON.stringify({ name: newName })
         }
       );
-      return response.ok;
+      
+      if (response.ok) {
+        this.name = newName;
+        return true;
+      }
+      return false;
     } catch (error) {
+      console.error('Error updating card name:', error);
       return false;
     }
+  }
+
+  async moveToList(newListId: string, authData: { token: string; clientId: string }): Promise<boolean> {
+    try {
+      const response = await fetch(
+        `https://api.trello.com/1/cards/${this.id}?key=${authData.clientId}&token=${authData.token}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ idList: newListId })
+        }
+      );
+      
+      if (response.ok) {
+        this.listId = newListId;
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error moving card:', error);
+      return false;
+    }
+  }
+
+  async updatePositionOnServer(newPos: number, authData: { token: string; clientId: string }): Promise<boolean> {
+    try {
+      const response = await fetch(
+        `https://api.trello.com/1/cards/${this.id}?key=${authData.clientId}&token=${authData.token}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ pos: newPos })
+        }
+      );
+      
+      if (response.ok) {
+        this.pos = newPos;
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error updating card position:', error);
+      return false;
+    }
+  }
+  // Validation Methods
+  isValid(): boolean {
+    return this.id.length > 0 && 
+           this.name.length > 0 && 
+           this.listId.length > 0 && 
+           this.boardId.length > 0;
+  }
+
+  belongsToList(listId: string): boolean {
+    return this.listId === listId;
+  }
+
+  belongsToBoard(boardId: string): boolean {
+    return this.boardId === boardId;
   }
 }

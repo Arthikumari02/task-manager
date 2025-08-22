@@ -35,6 +35,7 @@ const AddTaskForm: React.FC<AddTaskFormProps> = ({ listId, boardId, onTaskAdded,
         className="w-full p-1.5 border rounded text-sm"
         autoFocus
         onKeyDown={handleKeyDown}
+        disabled={isCreating}
       />
       <div className="flex space-x-2">
         <button

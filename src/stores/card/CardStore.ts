@@ -1,8 +1,9 @@
-import { makeAutoObservable, runInAction } from 'mobx';
+import { makeAutoObservable } from 'mobx';
 import { TrelloCard } from '../../types';
+import { CardModel } from '../../models';
 
 class CardStore {
-  boardCards: { [boardId: string]: TrelloCard[] } = {};
+  private cardsMap: Map<string, CardModel> = new Map();
   isLoading: boolean = false;
   error: string | null = null;
   isCreating: boolean = false;
@@ -10,6 +11,75 @@ class CardStore {
   constructor(private getAuthData: () => { token: string | null; clientId: string | null }) {
     makeAutoObservable(this);
   }
+
+  // Computed values for better performance and clean code
+  get allCards(): CardModel[] {
+    return Array.from(this.cardsMap.values());
+  }
+
+  get cardCount(): number {
+    return this.cardsMap.size;
+  }
+
+  getCardsForBoard = (boardId: string): TrelloCard[] => {
+    return this.allCards
+      .filter(card => card.boardId === boardId)
+      .map(card => ({
+        id: card.id,
+        name: card.name,
+        desc: card.desc,
+        closed: card.closed,
+        pos: card.pos,
+        listId: card.listId,
+        boardId: card.boardId,
+        url: card.url
+      }));
+  };
+
+  getCardsForList = (boardId: string, listId: string): TrelloCard[] => {
+    return this.allCards
+      .filter(card => card.boardId === boardId && card.listId === listId)
+      .map(card => ({
+        id: card.id,
+        name: card.name,
+        desc: card.desc,
+        closed: card.closed,
+        pos: card.pos,
+        listId: card.listId,
+        boardId: card.boardId,
+        url: card.url
+      }))
+      .sort((a, b) => (a.pos || 0) - (b.pos || 0));
+  };
+
+  getCardsByListMap = (boardId: string): Map<string, TrelloCard[]> => {
+    const cardsByList = new Map<string, TrelloCard[]>();
+    
+    this.allCards
+      .filter(card => card.boardId === boardId)
+      .forEach(card => {
+        if (!cardsByList.has(card.listId)) {
+          cardsByList.set(card.listId, []);
+        }
+        cardsByList.get(card.listId)!.push({
+          id: card.id,
+          name: card.name,
+          desc: card.desc,
+          closed: card.closed,
+          pos: card.pos,
+          listId: card.listId,
+          boardId: card.boardId,
+          url: card.url
+        });
+      });
+    
+    // Sort cards within each list
+    cardsByList.forEach(listCards => {
+      listCards.sort((a, b) => (a.pos || 0) - (b.pos || 0));
+    });
+    
+    return cardsByList;
+  };
 
   fetchCards = async (boardId: string): Promise<void> => {
     const { token, clientId } = this.getAuthData();
@@ -29,31 +99,29 @@ class CardStore {
 
       const trelloCards = await response.json();
       
-      runInAction(() => {
-        this.boardCards[boardId] = trelloCards
-          .filter((card: any) => !card.closed)
-          .map((card: any) => ({
+      // Create CardModel instances and add to cardsMap
+      trelloCards
+        .filter((card: any) => !card.closed)
+        .forEach((card: any) => {
+          const cardModel = new CardModel({
             id: card.id,
             name: card.name,
             desc: card.desc || '',
-            listId: card.idList,
-            boardId: boardId,
             closed: card.closed || false,
             pos: card.pos || 0,
+            listId: card.idList,
+            boardId: boardId,
             url: card.url || ''
-          }));
-      });
+          });
+          
+          this.cardsMap.set(cardModel.id, cardModel);
+        });
 
     } catch (err) {
       console.error('Error fetching cards:', err);
-      runInAction(() => {
-        this.error = err instanceof Error ? err.message : 'Failed to fetch cards';
-        this.boardCards[boardId] = [];
-      });
+      this.error = err instanceof Error ? err.message : 'Failed to fetch cards';
     } finally {
-      runInAction(() => {
-        this.isLoading = false;
-      });
+      this.isLoading = false;
     }
   };
 
@@ -96,25 +164,28 @@ class CardStore {
         url: newCard.url || ''
       };
 
-      runInAction(() => {
-        if (!this.boardCards[boardId]) {
-          this.boardCards[boardId] = [];
-        }
-        this.boardCards[boardId].push(cardToAdd);
+      // Create CardModel instance
+      const cardModel = new CardModel({
+        id: cardToAdd.id,
+        name: cardToAdd.name,
+        desc: cardToAdd.desc,
+        closed: cardToAdd.closed,
+        pos: cardToAdd.pos,
+        listId: cardToAdd.listId,
+        boardId: cardToAdd.boardId,
+        url: cardToAdd.url
       });
+      
+      this.cardsMap.set(cardModel.id, cardModel);
       
       return cardToAdd;
 
     } catch (error) {
       console.error('Error creating card:', error);
-      runInAction(() => {
-        this.error = error instanceof Error ? error.message : 'Failed to create card';
-      });
+      this.error = error instanceof Error ? error.message : 'Failed to create card';
       return null;
     } finally {
-      runInAction(() => {
-        this.isCreating = false;
-      });
+      this.isCreating = false;
     }
   };
 
@@ -138,20 +209,14 @@ class CardStore {
         throw new Error(`Failed to rename card: ${response.statusText}`);
       }
 
-      // Update local state
-      runInAction(() => {
-        if (this.boardCards[boardId]) {
-          const cardIndex = this.boardCards[boardId].findIndex(card => card.id === cardId);
-          if (cardIndex !== -1) {
-            this.boardCards[boardId][cardIndex].name = newName;
-          }
-        }
-      });
+      // Update CardModel
+      const cardModel = this.cardsMap.get(cardId);
+      if (cardModel) {
+        cardModel.name = newName;
+      }
     } catch (error) {
       console.error('Error renaming card:', error);
-      runInAction(() => {
-        this.error = error instanceof Error ? error.message : 'Failed to rename card';
-      });
+      this.error = error instanceof Error ? error.message : 'Failed to rename card';
     }
   };
 
@@ -160,14 +225,10 @@ class CardStore {
     if (!token || !clientId) return;
 
     // Update local state immediately for better UX
-    runInAction(() => {
-      if (this.boardCards[boardId]) {
-        const cardIndex = this.boardCards[boardId].findIndex(card => card.id === cardId);
-        if (cardIndex !== -1) {
-          this.boardCards[boardId][cardIndex].listId = destinationListId;
-        }
-      }
-    });
+    const cardModel = this.cardsMap.get(cardId);
+    if (cardModel) {
+      cardModel.listId = destinationListId;
+    }
 
     try {
       await fetch(
@@ -191,18 +252,11 @@ class CardStore {
   };
 
   reorderCardsInList = async (boardId: string, listId: string, sourceIndex: number, destinationIndex: number): Promise<void> => {
-    if (!this.boardCards[boardId]) return;
+    const listCards = this.getCardsForList(boardId, listId);
+    if (listCards.length === 0) return;
 
-    const listCards = this.boardCards[boardId].filter(card => card.listId === listId);
-    const otherCards = this.boardCards[boardId].filter(card => card.listId !== listId);
-    
     const [movedCard] = listCards.splice(sourceIndex, 1);
     listCards.splice(destinationIndex, 0, movedCard);
-
-    // Update local state immediately
-    runInAction(() => {
-      this.boardCards[boardId] = [...otherCards, ...listCards];
-    });
 
     // Update position on server
     const { token, clientId } = this.getAuthData();
@@ -229,17 +283,12 @@ class CardStore {
   // Alias for compatibility with useBoardData hook
   fetchBoardCards = this.fetchCards;
 
-  getCardsForBoard = (boardId: string): TrelloCard[] => {
-    return this.boardCards[boardId] || [];
-  };
-
-  getCardsForList = (boardId: string, listId: string): TrelloCard[] => {
-    const boardCards = this.boardCards[boardId] || [];
-    return boardCards.filter(card => card.listId === listId);
+  getCardById = (cardId: string): CardModel | undefined => {
+    return this.cardsMap.get(cardId);
   };
 
   reset = () => {
-    this.boardCards = {};
+    this.cardsMap.clear();
     this.error = null;
     this.isLoading = false;
     this.isCreating = false;
