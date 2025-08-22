@@ -29,7 +29,7 @@ class ListStore {
       }
 
       const trelloLists = await response.json();
-      
+
       runInAction(() => {
         this.boardLists[boardId] = trelloLists
           .filter((list: any) => !list.closed)
@@ -39,7 +39,8 @@ class ListStore {
             boardId: boardId,
             closed: list.closed || false,
             pos: list.pos || 0
-          }));
+          }))
+          .sort((a: ListModel, b: ListModel) => a.pos - b.pos); // Sort by position
       });
 
     } catch (err) {
@@ -82,7 +83,7 @@ class ListStore {
       }
 
       const newList = await response.json();
-      
+
       const listToAdd = new ListModel({
         id: newList.id,
         name: newList.name,
@@ -96,8 +97,10 @@ class ListStore {
           this.boardLists[boardId] = [];
         }
         this.boardLists[boardId].push(listToAdd);
+        // Sort after adding
+        this.boardLists[boardId].sort((a, b) => a.pos - b.pos);
       });
-      
+
       return listToAdd;
 
     } catch (error) {
@@ -132,7 +135,12 @@ class ListStore {
   };
 
   reorderLists = async (boardId: string, sourceIndex: number, destinationIndex: number): Promise<void> => {
-    if (!this.boardLists[boardId]) return;
+    console.log('Reordering lists:', { boardId, sourceIndex, destinationIndex });
+
+    if (!this.boardLists[boardId] || sourceIndex === destinationIndex) {
+      console.log('No lists found or same position, aborting');
+      return;
+    }
 
     const lists = [...this.boardLists[boardId]];
     const [movedList] = lists.splice(sourceIndex, 1);
@@ -143,23 +151,63 @@ class ListStore {
       this.boardLists[boardId] = lists;
     });
 
-    // Update positions on server
+    // Calculate new position for Trello API
     const { token, clientId } = this.getAuthData();
-    if (!token || !clientId) return;
+    if (!token || !clientId) {
+      console.log('No auth data available');
+      return;
+    }
 
     try {
-      await fetch(
+      let newPos: number | string;
+
+      if (destinationIndex === 0) {
+        // Moving to the beginning
+        newPos = 'top';
+      } else if (destinationIndex === lists.length - 1) {
+        // Moving to the end
+        newPos = 'bottom';
+      } else {
+        // Moving to middle - calculate position between adjacent lists
+        const prevList = lists[destinationIndex - 1];
+        const nextList = lists[destinationIndex + 1];
+        newPos = (prevList.pos + nextList.pos) / 2;
+      }
+
+      console.log('Updating list position:', { listId: movedList.id, newPos });
+
+      const response = await fetch(
         `https://api.trello.com/1/lists/${movedList.id}?key=${clientId}&token=${token}`,
         {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ pos: destinationIndex })
+          body: JSON.stringify({ pos: newPos })
         }
       );
+
+      if (!response.ok) {
+        throw new Error(`Failed to update list position: ${response.statusText}`);
+      }
+
+      const updatedList = await response.json();
+
+      // Update the list's position with the actual value returned from Trello
+      runInAction(() => {
+        const listIndex = this.boardLists[boardId].findIndex(list => list.id === movedList.id);
+        if (listIndex !== -1) {
+          this.boardLists[boardId][listIndex].pos = updatedList.pos;
+        }
+        // Re-sort to ensure correct order
+        this.boardLists[boardId].sort((a, b) => a.pos - b.pos);
+      });
+
     } catch (error) {
       console.error('Error reordering lists:', error);
+      runInAction(() => {
+        this.error = error instanceof Error ? error.message : 'Failed to reorder lists';
+      });
       // Revert on error
       await this.fetchLists(boardId);
     }

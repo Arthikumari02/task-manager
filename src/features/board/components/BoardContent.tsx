@@ -8,7 +8,12 @@ import AddListForm from './AddListForm';
 import EmptyBoardState from './EmptyBoardState';
 import AddListButton from './AddListButton';
 
-const BoardContent: React.FC<BoardContentProps> = observer(({
+interface ExtendedBoardContentProps extends BoardContentProps {
+  listsMap?: Map<string, any>;
+  cardsByListMap?: Map<string, any[]>;
+}
+
+const BoardContent: React.FC<ExtendedBoardContentProps> = observer(({
   boardId,
   lists,
   cards,
@@ -17,6 +22,7 @@ const BoardContent: React.FC<BoardContentProps> = observer(({
   onListAdded,
   onCancelAddList,
   onShowAddListForm,
+  cardsByListMap,
 }) => {
   const { reorderLists, updateList } = useLists();
   const { moveCard, reorderCardsInList, renameCard } = useCards();
@@ -32,7 +38,10 @@ const BoardContent: React.FC<BoardContentProps> = observer(({
   };
 
   const handleDragEnd = (result: DropResult) => {
+    console.log('Drag end result:', result);
+
     if (!result.destination || !boardId) {
+      console.log('No destination or boardId, aborting drag');
       return;
     }
 
@@ -40,13 +49,20 @@ const BoardContent: React.FC<BoardContentProps> = observer(({
 
     // If dropped in the same position, do nothing
     if (source.droppableId === destination.droppableId && source.index === destination.index) {
+      console.log('Dropped in same position, no action needed');
       return;
     }
 
     if (type === 'list') {
+      console.log('Handling list reorder:', {
+        boardId,
+        sourceIndex: source.index,
+        destinationIndex: destination.index
+      });
       // Handle list reordering
       reorderLists(boardId, source.index, destination.index);
     } else if (type === 'card') {
+      console.log('Moving card:', { draggableId, type });
       // Handle card movement
       const sourceListId = source.droppableId;
       const destinationListId = destination.droppableId;
@@ -61,31 +77,36 @@ const BoardContent: React.FC<BoardContentProps> = observer(({
     }
   };
 
+  // Debug: Log the lists being rendered
+  console.log('BoardContent rendering with lists:', lists?.length || 0, lists);
+
   return (
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="flex space-x-2 sm:space-x-4 overflow-x-auto pb-4 -mb-4">
-          {/* Empty Board State */}
-          {lists.length === 0 && !showNewListInput && (
-            <EmptyBoardState onAddFirstList={onShowAddListForm} />
-          )}
+    <DragDropContext onDragEnd={handleDragEnd}>
+      <div className="flex space-x-2 sm:space-x-4 overflow-x-auto pb-4 -mb-4">
+        {/* Empty Board State */}
+        {lists.length === 0 && !showNewListInput && (
+          <EmptyBoardState onAddFirstList={onShowAddListForm} />
+        )}
 
-          {/* Add First List Form */}
-          {lists.length === 0 && showNewListInput && boardId && (
-            <AddListForm
-              boardId={boardId}
-              onListAdded={onListAdded}
-              onCancel={onCancelAddList}
-              isFirstList={true}
-            />
-          )}
+        {/* Add First List Form */}
+        {lists.length === 0 && showNewListInput && boardId && (
+          <AddListForm
+            boardId={boardId}
+            onListAdded={onListAdded}
+            onCancel={onCancelAddList}
+            isFirstList={true}
+          />
+        )}
 
-          {/* Droppable area for lists */}
+        {/* Droppable area for lists */}
+        {lists.length > 0 && (
           <Droppable droppableId="board-lists" direction="horizontal" type="list">
-            {(provided) => (
+            {(provided, snapshot) => (
               <div
                 {...provided.droppableProps}
                 ref={provided.innerRef}
-                className="flex space-x-2 sm:space-x-4"
+                className={`flex space-x-2 sm:space-x-4 ${snapshot.isDraggingOver ? 'bg-blue-50 bg-opacity-50 rounded-lg p-2' : ''
+                  }`}
               >
                 {lists.map((list: any, index: number) => (
                   <Draggable key={list.id} draggableId={list.id} index={index}>
@@ -94,12 +115,19 @@ const BoardContent: React.FC<BoardContentProps> = observer(({
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
-                        className={`${snapshot.isDragging ? 'opacity-75 transform rotate-3' : ''
+                        className={`${snapshot.isDragging
+                          ? 'opacity-75 transform rotate-3 z-50'
+                          : ''
                           }`}
+                        style={{
+                          ...provided.draggableProps.style,
+                          // Ensure proper z-index during drag
+                          zIndex: snapshot.isDragging ? 1000 : 'auto',
+                        }}
                       >
                         <BoardList
                           list={list}
-                          cards={cards}
+                          cards={cardsByListMap?.get(list.id) || cards.filter(card => card.listId === list.id)}
                           onTaskAdded={onTaskAdded}
                           onRenameList={handleRenameList}
                           onTaskRename={handleRenameTask}
@@ -112,22 +140,23 @@ const BoardContent: React.FC<BoardContentProps> = observer(({
               </div>
             )}
           </Droppable>
+        )}
 
-          {/* Add Another List */}
-          {lists.length > 0 && (
-            showNewListInput && boardId ? (
-              <AddListForm
-                boardId={boardId}
-                onListAdded={onListAdded}
-                onCancel={onCancelAddList}
-                isFirstList={false}
-              />
-            ) : (
-              <AddListButton onClick={onShowAddListForm} />
-            )
-          )}
-        </div>
-      </DragDropContext>
+        {/* Add Another List */}
+        {lists.length > 0 && (
+          showNewListInput && boardId ? (
+            <AddListForm
+              boardId={boardId}
+              onListAdded={onListAdded}
+              onCancel={onCancelAddList}
+              isFirstList={false}
+            />
+          ) : (
+            <AddListButton onClick={onShowAddListForm} />
+          )
+        )}
+      </div>
+    </DragDropContext>
   );
 });
 

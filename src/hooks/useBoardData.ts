@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth, useBoards, useLists, useCards, useOrganizations } from '../contexts';
-import { UseBoardDataReturn } from '../types';
+import { UseBoardDataReturn, TrelloCard } from '../types';
+import { ListModel } from '../models';
 
 export const useBoardData = (boardId: string | undefined): UseBoardDataReturn => {
   const { token, clientId } = useAuth();
@@ -12,8 +13,29 @@ export const useBoardData = (boardId: string | undefined): UseBoardDataReturn =>
   const [boardName, setBoardName] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
 
-  const lists = boardId ? (boardLists[boardId] || []) : [];
-  const cards = boardId ? (boardCards[boardId] || []) : [];
+  // Properly map board → lists → cards hierarchy using Map for efficient lookups
+  const lists: ListModel[] = boardId ? (boardLists[boardId] || []) : [];
+  const cards: TrelloCard[] = boardId ? (boardCards[boardId] || []) : [];
+  
+  // Create hierarchical Maps for efficient O(1) lookups
+  const listsMap = new Map(lists.map(list => [list.id, list]));
+  const cardsByListMap = new Map<string, TrelloCard[]>();
+  
+  // Group cards by listId using Map for efficient access
+  cards.forEach(card => {
+    if (!cardsByListMap.has(card.listId)) {
+      cardsByListMap.set(card.listId, []);
+    }
+    cardsByListMap.get(card.listId)!.push(card);
+  });
+  
+  // Sort cards within each list by position
+  cardsByListMap.forEach(listCards => {
+    listCards.sort((a, b) => (a.pos || 0) - (b.pos || 0));
+  });
+  
+  // Sort lists by position (create new array to avoid MobX mutation error)
+  const sortedLists = lists.slice().sort((a, b) => (a.pos || 0) - (b.pos || 0));
 
   useEffect(() => {
     if (!boardId) return;
@@ -72,9 +94,12 @@ export const useBoardData = (boardId: string | undefined): UseBoardDataReturn =>
 
   return {
     boardName,
-    lists,
+    lists: sortedLists,
     cards,
     isLoading,
     handleTaskAdded,
+    // Expose hierarchy maps for efficient component access
+    listsMap,
+    cardsByListMap,
   };
 };

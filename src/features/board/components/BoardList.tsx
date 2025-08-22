@@ -42,7 +42,8 @@ const BoardList: React.FC<BoardListProps> = observer(({ list, cards, onTaskAdded
     }
   };
 
-  const listCards = cards.filter((card) => card.listId === list.id);
+  // Cards are now pre-filtered and passed directly from parent component using Map
+  const listCards = cards; // No need to filter since cards are already filtered by listId
 
   return (
     <div className="bg-[#F4F5F7] rounded-sm px-3 py-2 w-64 flex-shrink-0 min-h-[80px] h-fit">

@@ -9,7 +9,9 @@ import BoardHeader from './BoardHeader';
 import BoardContent from './BoardContent';
 
 const BoardViewContent: React.FC<{ boardId: string | undefined }> = observer(({ boardId }) => {
-  const { boardName, lists, cards, isLoading, handleTaskAdded } = useBoardData(boardId);
+  const { boardName, lists, cards, isLoading, handleTaskAdded, listsMap, cardsByListMap } = useBoardData(boardId);
+
+  // Debug logging to check if lists are being fetched
   const [showNewListInput, setShowNewListInput] = useState(false);
 
   const handleListAdded = () => {
@@ -36,6 +38,8 @@ const BoardViewContent: React.FC<{ boardId: string | undefined }> = observer(({ 
           onListAdded={handleListAdded}
           onCancelAddList={handleCancelAddList}
           onShowAddListForm={() => setShowNewListInput(true)}
+          listsMap={listsMap}
+          cardsByListMap={cardsByListMap}
         />
       )}
     </main>

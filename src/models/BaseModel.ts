@@ -1,4 +1,4 @@
-import { makeAutoObservable, runInAction } from 'mobx';
+import { makeObservable, observable, action, runInAction } from 'mobx';
 
 export abstract class BaseModel {
   id: string;
@@ -7,7 +7,11 @@ export abstract class BaseModel {
   constructor(id: string, name: string) {
     this.id = id;
     this.name = name;
-    makeAutoObservable(this);
+    makeObservable(this, {
+      name: observable,
+      setName: action,
+      updateName: action
+    });
   }
 
   setName = (newName: string) => {

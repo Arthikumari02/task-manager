@@ -97,10 +97,12 @@ export interface EmptyBoardStateProps {
 // Custom Hook Types
 export interface UseBoardDataReturn {
   boardName: string;
-  lists: TrelloList[];
+  lists: any[]; // Using any[] to support both TrelloList and ListModel
   cards: TrelloCard[];
   isLoading: boolean;
   handleTaskAdded: () => void;
+  listsMap: Map<string, any>;
+  cardsByListMap: Map<string, TrelloCard[]>;
 }
 
 // Header Component Types
