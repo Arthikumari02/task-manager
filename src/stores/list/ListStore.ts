@@ -54,7 +54,7 @@ class ListStore {
     }
   };
 
-  createList = async (name: string, boardId: string): Promise<TrelloList | null> => {
+  createList = async (boardId: string, name: string): Promise<TrelloList | null> => {
     const { token, clientId } = this.getAuthData();
     if (!token || !clientId || !boardId) return null;
 
@@ -111,6 +111,80 @@ class ListStore {
       });
     }
   };
+
+  updateList = async (listId: string, newName: string): Promise<void> => {
+    const { token, clientId } = this.getAuthData();
+    if (!token || !clientId) return;
+
+    try {
+      const response = await fetch(
+        `https://api.trello.com/1/lists/${listId}?key=${clientId}&token=${token}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name: newName })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to update list: ${response.statusText}`);
+      }
+
+      // Update local state
+      runInAction(() => {
+        Object.keys(this.boardLists).forEach(boardId => {
+          const listIndex = this.boardLists[boardId].findIndex(list => list.id === listId);
+          if (listIndex !== -1) {
+            this.boardLists[boardId][listIndex].name = newName;
+          }
+        });
+      });
+    } catch (error) {
+      console.error('Error updating list:', error);
+      runInAction(() => {
+        this.error = error instanceof Error ? error.message : 'Failed to update list';
+      });
+    }
+  };
+
+  reorderLists = async (boardId: string, sourceIndex: number, destinationIndex: number): Promise<void> => {
+    if (!this.boardLists[boardId]) return;
+
+    const lists = [...this.boardLists[boardId]];
+    const [movedList] = lists.splice(sourceIndex, 1);
+    lists.splice(destinationIndex, 0, movedList);
+
+    // Update local state immediately for better UX
+    runInAction(() => {
+      this.boardLists[boardId] = lists;
+    });
+
+    // Update positions on server
+    const { token, clientId } = this.getAuthData();
+    if (!token || !clientId) return;
+
+    try {
+      await fetch(
+        `https://api.trello.com/1/lists/${movedList.id}?key=${clientId}&token=${token}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ pos: destinationIndex })
+        }
+      );
+    } catch (error) {
+      console.error('Error reordering lists:', error);
+      // Revert on error
+      await this.fetchLists(boardId);
+    }
+  };
+
+  // Alias for compatibility with useBoardData hook
+  fetchBoardLists = this.fetchLists;
 
   getListsForBoard = (boardId: string): TrelloList[] => {
     return this.boardLists[boardId] || [];

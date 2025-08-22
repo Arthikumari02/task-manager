@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
 import Header from './Header';
 import CreateBoardModal from './CreateBoardModal';
 import Loading from './Loading';
-import { useOrganizations, useBoards } from '../contexts';
+import { useOrganizations, useBoards, useAuth } from '../contexts';
 import { TrelloBoard } from '../types';
 
-const Dashboard: React.FC = () => {
+const Dashboard: React.FC = observer(() => {
   const navigate = useNavigate();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   
@@ -17,6 +18,14 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     fetchOrganizations();
   }, [fetchOrganizations]);
+
+  // Fetch user info on mount if authenticated
+  const { fetchUserInfo } = useAuth();
+  useEffect(() => {
+    if (fetchUserInfo) {
+      fetchUserInfo();
+    }
+  }, [fetchUserInfo]);
 
   // Fetch boards when current organization changes
   useEffect(() => {
@@ -129,6 +138,6 @@ const Dashboard: React.FC = () => {
       />
     </div>
   );
-};
+});
 
 export default Dashboard;

@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useRef } from 'react';
 import CardStore from '../stores/card/CardStore';
 
-const CardContext = createContext<CardStore | null>(null);
+const CardContext = createContext<CardStore | undefined>(undefined);
 
 export const CardProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // define how to get auth data
@@ -22,8 +22,10 @@ export const CardProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-export const useCards = () => {
-  const store = useContext(CardContext);
-  if (!store) throw new Error('useCardStore must be used within a CardProvider');
-  return store;
+export const useCards = (): CardStore => {
+  const context = useContext(CardContext);
+  if (context === undefined) {
+    throw new Error('useCards must be used within a CardProvider');
+  }
+  return context;
 };

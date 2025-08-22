@@ -1,4 +1,4 @@
-import { authStore } from './auth/AuthStore';
+import authStore from './auth/AuthStore';
 import OrganizationStore from './organization/OrganizationStore';
 import BoardStore from './board/BoardStore';
 import ListStore from './list/ListStore';

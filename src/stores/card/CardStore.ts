@@ -118,6 +118,117 @@ class CardStore {
     }
   };
 
+  renameCard = async (boardId: string, cardId: string, newName: string): Promise<void> => {
+    const { token, clientId } = this.getAuthData();
+    if (!token || !clientId) return;
+
+    try {
+      const response = await fetch(
+        `https://api.trello.com/1/cards/${cardId}?key=${clientId}&token=${token}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name: newName })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to rename card: ${response.statusText}`);
+      }
+
+      // Update local state
+      runInAction(() => {
+        if (this.boardCards[boardId]) {
+          const cardIndex = this.boardCards[boardId].findIndex(card => card.id === cardId);
+          if (cardIndex !== -1) {
+            this.boardCards[boardId][cardIndex].name = newName;
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error renaming card:', error);
+      runInAction(() => {
+        this.error = error instanceof Error ? error.message : 'Failed to rename card';
+      });
+    }
+  };
+
+  moveCard = async (boardId: string, cardId: string, sourceListId: string, destinationListId: string, position: number): Promise<void> => {
+    const { token, clientId } = this.getAuthData();
+    if (!token || !clientId) return;
+
+    // Update local state immediately for better UX
+    runInAction(() => {
+      if (this.boardCards[boardId]) {
+        const cardIndex = this.boardCards[boardId].findIndex(card => card.id === cardId);
+        if (cardIndex !== -1) {
+          this.boardCards[boardId][cardIndex].listId = destinationListId;
+        }
+      }
+    });
+
+    try {
+      await fetch(
+        `https://api.trello.com/1/cards/${cardId}?key=${clientId}&token=${token}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            idList: destinationListId,
+            pos: position
+          })
+        }
+      );
+    } catch (error) {
+      console.error('Error moving card:', error);
+      // Revert on error
+      await this.fetchCards(boardId);
+    }
+  };
+
+  reorderCardsInList = async (boardId: string, listId: string, sourceIndex: number, destinationIndex: number): Promise<void> => {
+    if (!this.boardCards[boardId]) return;
+
+    const listCards = this.boardCards[boardId].filter(card => card.listId === listId);
+    const otherCards = this.boardCards[boardId].filter(card => card.listId !== listId);
+    
+    const [movedCard] = listCards.splice(sourceIndex, 1);
+    listCards.splice(destinationIndex, 0, movedCard);
+
+    // Update local state immediately
+    runInAction(() => {
+      this.boardCards[boardId] = [...otherCards, ...listCards];
+    });
+
+    // Update position on server
+    const { token, clientId } = this.getAuthData();
+    if (!token || !clientId) return;
+
+    try {
+      await fetch(
+        `https://api.trello.com/1/cards/${movedCard.id}?key=${clientId}&token=${token}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ pos: destinationIndex })
+        }
+      );
+    } catch (error) {
+      console.error('Error reordering cards:', error);
+      // Revert on error
+      await this.fetchCards(boardId);
+    }
+  };
+
+  // Alias for compatibility with useBoardData hook
+  fetchBoardCards = this.fetchCards;
+
   getCardsForBoard = (boardId: string): TrelloCard[] => {
     return this.boardCards[boardId] || [];
   };

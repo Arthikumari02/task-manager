@@ -1,4 +1,5 @@
 import React from 'react';
+import { observer } from 'mobx-react-lite';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AppProvider, useAuth } from './contexts';
 import { Login } from './features/auth';
@@ -7,7 +8,7 @@ import { BoardView } from './features/board';
 import PageNotFound from './components/PageNotFound';
 import './index.css';
 
-const AppContent: React.FC = () => {
+const AppContent: React.FC = observer(() => {
   const { isAuthenticated } = useAuth();
 
   if (!isAuthenticated) {
@@ -23,7 +24,7 @@ const AppContent: React.FC = () => {
       </Routes>
     </Router>
   );
-};
+});
 
 const App: React.FC = () => {
   return (

@@ -74,6 +74,7 @@ export interface TaskCardProps {
 
 export interface AddTaskFormProps {
   listId: string;
+  boardId: string;
   onTaskAdded: () => void;
   onCancel: () => void;
 }

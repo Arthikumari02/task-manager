@@ -4,11 +4,11 @@ import { useParams } from 'react-router-dom';
 import Header from '../../../components/Header';
 import Loading from '../../../components/Loading';
 import { useBoardData } from '../../../hooks';
+import { ListProvider, CardProvider } from '../../../contexts';
 import BoardHeader from './BoardHeader';
 import BoardContent from './BoardContent';
 
-const BoardView: React.FC = observer(() => {
-  const { boardId } = useParams<{ boardId: string }>();
+const BoardViewContent: React.FC<{ boardId: string | undefined }> = observer(({ boardId }) => {
   const { boardName, lists, cards, isLoading, handleTaskAdded } = useBoardData(boardId);
   const [showNewListInput, setShowNewListInput] = useState(false);
 
@@ -21,6 +21,31 @@ const BoardView: React.FC = observer(() => {
   };
 
   return (
+    <main className="px-2 sm:px-4 py-4 sm:py-6">
+      <BoardHeader boardName={boardName} />
+
+      {isLoading ? (
+        <Loading message="Loading" size="large" className="text-white" />
+      ) : (
+        <BoardContent
+          boardId={boardId}
+          lists={lists}
+          cards={cards}
+          showNewListInput={showNewListInput}
+          onTaskAdded={handleTaskAdded}
+          onListAdded={handleListAdded}
+          onCancelAddList={handleCancelAddList}
+          onShowAddListForm={() => setShowNewListInput(true)}
+        />
+      )}
+    </main>
+  );
+});
+
+const BoardView: React.FC = observer(() => {
+  const { boardId } = useParams<{ boardId: string }>();
+
+  return (
     <div className="min-h-screen bg-[#0079BF]">
       <Header
         title="Task Manager"
@@ -29,24 +54,11 @@ const BoardView: React.FC = observer(() => {
         showNavigation={true}
       />
 
-      <main className="px-2 sm:px-4 py-4 sm:py-6">
-        <BoardHeader boardName={boardName} />
-
-        {isLoading ? (
-          <Loading message="Loading" size="large" className="text-white" />
-        ) : (
-          <BoardContent
-            boardId={boardId}
-            lists={lists}
-            cards={cards}
-            showNewListInput={showNewListInput}
-            onTaskAdded={handleTaskAdded}
-            onListAdded={handleListAdded}
-            onCancelAddList={handleCancelAddList}
-            onShowAddListForm={() => setShowNewListInput(true)}
-          />
-        )}
-      </main>
+      <ListProvider>
+        <CardProvider>
+          <BoardViewContent boardId={boardId} />
+        </CardProvider>
+      </ListProvider>
     </div>
   );
 });

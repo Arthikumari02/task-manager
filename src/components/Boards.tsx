@@ -3,14 +3,15 @@ import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
 import Header from './Header';
 import CreateBoardModal from './CreateBoardModal';
-import { authStore } from '../stores/AuthStore';
+import { useAuth, useOrganizations, useBoards } from '../contexts';
 
 const Boards: React.FC = observer(() => {
   const navigate = useNavigate();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const currentBoards = authStore.currentOrganizationBoards;
-  const isLoading = authStore.isLoadingBoards;
-  const error = authStore.boardsError;
+  const { organizations, currentOrganization, setCurrentOrganization } = useOrganizations();
+  const { currentOrganizationBoards, isLoading, fetchBoardsForOrganization } = useBoards();
+  const currentBoards = currentOrganizationBoards;
+  const error = null; // TODO: Add error handling to BoardStore
 
   const getBoardColor = (index: number) => {
     const colors = ['bg-blue-500', 'bg-green-500', 'bg-red-500', 'bg-purple-500', 'bg-yellow-500', 'bg-indigo-500'];
@@ -39,9 +40,9 @@ const Boards: React.FC = observer(() => {
       <main className="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
         <div className="py-4 sm:py-6">
           <div className="mb-4 sm:mb-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
-              {authStore.currentOrganization?.displayName} Boards
-            </h2>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {currentOrganization?.displayName} Boards
+            </h1>
             <p className="text-sm sm:text-base text-gray-600">Manage and organize your boards in this organization</p>
           </div>
 
@@ -52,19 +53,19 @@ const Boards: React.FC = observer(() => {
             </label>
             <select
               id="org-select"
-              value={authStore.currentOrganization?.id || ''}
+              value={currentOrganization?.id || ''}
               onChange={(e) => {
-                const selectedOrg = authStore.organizations.find(
+                const selectedOrg = organizations.find(
                   (org) => org.id === e.target.value
                 );
                 if (selectedOrg) {
-                  authStore.setCurrentOrganization(selectedOrg);
-                  authStore.fetchBoardsForOrganization(selectedOrg.id);
+                  setCurrentOrganization(selectedOrg);
+                  fetchBoardsForOrganization(selectedOrg.id);
                 }
               }}
               className="w-full sm:w-auto px-3 py-2 border rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
             >
-              {authStore.organizations.map((org) => (
+              {organizations.map((org) => (
                 <option key={org.id} value={org.id}>
                   {org.displayName}
                 </option>
@@ -146,7 +147,7 @@ const Boards: React.FC = observer(() => {
                 You Don't have any board in workspace
               </h3>
               <p className="text-gray-600 mb-6">
-                Get started by creating your first board in {authStore.currentOrganization?.displayName}
+                Get started by creating your first board in {currentOrganization?.displayName}
               </p>
               <button
                 onClick={() => setIsCreateModalOpen(true)}

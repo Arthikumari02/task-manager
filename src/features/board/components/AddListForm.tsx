@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
+import { observer } from 'mobx-react-lite';
 import { useLists } from '../../../contexts';
 import { AddListFormProps } from '../../../types';
 
-const AddListForm: React.FC<AddListFormProps> = ({ 
+const AddListForm: React.FC<AddListFormProps> = observer(({ 
   boardId, 
   onListAdded, 
   onCancel, 
@@ -106,6 +107,6 @@ const AddListForm: React.FC<AddListFormProps> = ({
       </div>
     </div>
   );
-};
+});
 
 export default AddListForm;

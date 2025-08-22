@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useCards } from '../../../contexts';
 import { AddTaskFormProps } from '../../../types';
 
-const AddTaskForm: React.FC<AddTaskFormProps> = ({ listId, onTaskAdded, onCancel }) => {
+const AddTaskForm: React.FC<AddTaskFormProps> = ({ listId, boardId, onTaskAdded, onCancel }) => {
   const { createCard, isCreating } = useCards();
   const [taskTitle, setTaskTitle] = useState('');
 
@@ -10,7 +10,7 @@ const AddTaskForm: React.FC<AddTaskFormProps> = ({ listId, onTaskAdded, onCancel
     const title = taskTitle.trim();
     if (!title) return;
 
-    const newCard = await createCard(listId, title);
+    const newCard = await createCard(title, listId, boardId);
     if (newCard) {
       setTaskTitle('');
       onTaskAdded();

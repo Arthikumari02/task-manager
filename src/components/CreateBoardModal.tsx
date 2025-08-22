@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
-import { authStore } from '../stores/AuthStore';
+import { useOrganizations, useBoards } from '../contexts';
 
 interface CreateBoardModalProps {
   isOpen: boolean;
@@ -10,30 +10,27 @@ interface CreateBoardModalProps {
 
 const CreateBoardModal: React.FC<CreateBoardModalProps> = observer(({ isOpen, onClose }) => {
   const [boardName, setBoardName] = useState('');
-  const [boardDescription, setBoardDescription] = useState('');
   const navigate = useNavigate();
+  const { currentOrganization } = useOrganizations();
+  const { createBoard, isCreating } = useBoards();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (boardName.trim()) {
-      try {
-        const newBoard = await authStore.addBoard(boardName.trim(), boardDescription.trim());
+    const handleCreateBoard = async () => {
+      if (!boardName.trim() || !currentOrganization) return;
+      
+      const newBoard = await createBoard(boardName.trim(), currentOrganization.id);
+      if (newBoard) {
         setBoardName('');
-        setBoardDescription('');
         onClose();
-        // Navigate to the new board view
-        if (newBoard) {
-          navigate(`/board/${newBoard.id}`);
-        }
-      } catch (error) {
-        console.error('Failed to create board:', error);
+        navigate(`/board/${newBoard.id}`);
       }
-    }
+    };
+    handleCreateBoard();
   };
 
   const handleClose = () => {
     setBoardName('');
-    setBoardDescription('');
     onClose();
   };
 
@@ -72,22 +69,31 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = observer(({ isOpen, on
               />
             </div>
 
-            <div className="mb-4">
-              <p className="text-sm font-bold text-black">
-                {authStore.currentOrganization?.displayName}
-              </p>
-            </div>
+            {currentOrganization ? (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Organization
+                </label>
+                <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
+                  {currentOrganization.displayName}
+                </div>
+              </div>
+            ) : null}
 
             {/* Modal Footer */}
             <div className="flex justify-start">
               <button
                 type="submit"
-                disabled={!boardName.trim() || authStore.isCreatingBoard}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed rounded transition-colors duration-200 flex items-center space-x-2"
+                disabled={!boardName.trim() || isCreating}
+                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+                  isCreating
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+                }`}
               >
-                {authStore.isCreatingBoard ? (
+                {isCreating ? (
                   <>
-                    <div className="w-4 h-4 border border-white border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     <span>Creating...</span>
                   </>
                 ) : (
@@ -108,8 +114,8 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = observer(({ isOpen, on
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+            </svg>
+          </button>
           {/* Mobile Body */}
           <form onSubmit={handleSubmit} className="p-6 pb-8">
             <div className="mb-6">
@@ -125,20 +131,29 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = observer(({ isOpen, on
               />
             </div>
 
-            <div className="mb-6">
-              <p className="text-base font-semibold text-gray-900">
-                {authStore.currentOrganization?.displayName}
-              </p>
-            </div>
+            {currentOrganization ? (
+              <div className="mb-6">
+                <label className="block text-base font-semibold text-gray-900 mb-2">
+                  Organization
+                </label>
+                <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
+                  {currentOrganization.displayName}
+                </div>
+              </div>
+            ) : null}
 
             {/* Mobile Footer */}
             <div className="space-y-3 flex justify-start">
               <button
                 type="submit"
-                disabled={!boardName.trim() || authStore.isCreatingBoard}
-                className="w-50 px-3 py-2 text-base font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+                disabled={!boardName.trim() || isCreating}
+                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+                  isCreating
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+                }`}
               >
-                {authStore.isCreatingBoard ? (
+                {isCreating ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     <span>Creating...</span>

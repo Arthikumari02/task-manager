@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
+import { observer } from 'mobx-react-lite';
 import { Droppable } from '@hello-pangea/dnd';
 import { BoardListProps } from '../../../types';
 import TaskCard from './TaskCard';
 import AddTaskForm from './AddTaskForm';
-import { CardProvider } from '../../../contexts';
 
-const BoardList: React.FC<BoardListProps> = ({ list, cards, onTaskAdded, onRenameList, onTaskRename }) => {
+const BoardList: React.FC<BoardListProps> = observer(({ list, cards, onTaskAdded, onRenameList, onTaskRename }) => {
   const [showAddTaskForm, setShowAddTaskForm] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [title, setTitle] = useState(list.name);
@@ -67,35 +67,28 @@ const BoardList: React.FC<BoardListProps> = ({ list, cards, onTaskAdded, onRenam
       )}
 
       {/* Tasks */}
-      <CardProvider>
-        <Droppable droppableId={list.id} type="card">
-          {(provided, snapshot) => (
-            <div
-              ref={provided.innerRef}
-              {...provided.droppableProps}
-              className={`space-y-2 mb-2 min-h-[20px] transition-colors ${snapshot.isDraggingOver ? 'bg-blue-50 rounded' : ''
-                }`}
-            >
-              {listCards.map((card, index) => (
-                <TaskCard
-                  key={card.id}
-                  id={card.id}
-                  name={card.name}
-                  desc={card.desc}
-                  index={index}
-                  onTaskRename={onTaskRename}
-                />
-              ))}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </CardProvider>
+      <Droppable droppableId={list.id} type="card">
+        {(provided, snapshot) => (
+          <div
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+            className={`min-h-[2px] ${
+              snapshot.isDraggingOver ? 'bg-blue-100' : ''
+            }`}
+          >
+            {listCards.map((card, index) => (
+              <TaskCard key={card.id} id={card.id} name={card.name} desc={card.desc} index={index} onTaskRename={onTaskRename} />
+            ))}
+            {provided.placeholder}
+          </div>
+        )}
+      </Droppable>
 
       {/* Add Task */}
       {showAddTaskForm ? (
         <AddTaskForm
           listId={list.id}
+          boardId={list.boardId}
           onTaskAdded={handleTaskAdded}
           onCancel={handleCancelAddTask}
         />
@@ -109,6 +102,6 @@ const BoardList: React.FC<BoardListProps> = ({ list, cards, onTaskAdded, onRenam
       )}
     </div>
   );
-};
+});
 
 export default BoardList;

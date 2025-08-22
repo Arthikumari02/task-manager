@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { observer } from 'mobx-react-lite';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { BoardContentProps } from '../../../types';
-import { useLists, useCards, ListProvider } from '../../../contexts';
+import { useLists, useCards } from '../../../contexts';
 import BoardList from './BoardList';
 import AddListForm from './AddListForm';
 import EmptyBoardState from './EmptyBoardState';
 import AddListButton from './AddListButton';
 
-const BoardContent: React.FC<BoardContentProps> = ({
+const BoardContent: React.FC<BoardContentProps> = observer(({
   boardId,
   lists,
   cards,
@@ -60,10 +61,7 @@ const BoardContent: React.FC<BoardContentProps> = ({
     }
   };
 
-  const { } = useLists()
-
   return (
-    <ListProvider>
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="flex space-x-2 sm:space-x-4 overflow-x-auto pb-4 -mb-4">
           {/* Empty Board State */}
@@ -130,8 +128,7 @@ const BoardContent: React.FC<BoardContentProps> = ({
           )}
         </div>
       </DragDropContext>
-    </ListProvider>
   );
-};
+});
 
 export default BoardContent;

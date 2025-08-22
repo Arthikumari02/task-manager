@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useOrganizations } from '../contexts/OrganizationContext';
@@ -13,7 +14,7 @@ interface HeaderProps {
   currentPage?: 'dashboard' | 'boards' | 'tasks' | 'profile';
 }
 
-const Header: React.FC<HeaderProps> = ({
+const Header: React.FC<HeaderProps> = observer(({
   title = 'Task Manager',
   showSearch = true,
 }) => {
@@ -356,6 +357,6 @@ const Header: React.FC<HeaderProps> = ({
       />
     </header>
   );
-};
+});
 
 export default Header;

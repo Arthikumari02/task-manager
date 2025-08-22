@@ -113,6 +113,13 @@ class BoardStore {
     }
   };
 
+  // Alias for compatibility
+  fetchBoardsForOrganization = this.fetchBoards;
+
+  get currentOrganizationBoards(): TrelloBoard[] {
+    return this.boards;
+  }
+
   reset = () => {
     this.boards = [];
     this.error = null;
