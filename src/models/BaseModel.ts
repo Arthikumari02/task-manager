@@ -1,0 +1,45 @@
+import { makeAutoObservable, runInAction } from 'mobx';
+
+export abstract class BaseModel {
+  id: string;
+  name: string;
+
+  constructor(id: string, name: string) {
+    this.id = id;
+    this.name = name;
+    makeAutoObservable(this);
+  }
+
+  setName = (newName: string) => {
+    this.name = newName;
+  };
+
+  abstract updateNameOnServer(newName: string, authData: { token: string; clientId: string }): Promise<boolean>;
+
+  updateName = async (newName: string, authData: { token: string; clientId: string }): Promise<boolean> => {
+    const oldName = this.name;
+    
+    // Optimistic update
+    runInAction(() => {
+      this.setName(newName);
+    });
+
+    try {
+      const success = await this.updateNameOnServer(newName, authData);
+      if (!success) {
+        // Revert on failure
+        runInAction(() => {
+          this.setName(oldName);
+        });
+      }
+      return success;
+    } catch (error) {
+      // Revert on error
+      runInAction(() => {
+        this.setName(oldName);
+      });
+      console.error(`Error updating ${this.constructor.name} name:`, error);
+      return false;
+    }
+  };
+}

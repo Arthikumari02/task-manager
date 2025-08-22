@@ -1,8 +1,9 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import { TrelloList } from '../../types';
+import { ListModel } from '../../models';
 
 class ListStore {
-  boardLists: { [boardId: string]: TrelloList[] } = {};
+  boardLists: { [boardId: string]: ListModel[] } = {};
   isLoading: boolean = false;
   error: string | null = null;
   isCreating: boolean = false;
@@ -32,7 +33,7 @@ class ListStore {
       runInAction(() => {
         this.boardLists[boardId] = trelloLists
           .filter((list: any) => !list.closed)
-          .map((list: any) => ({
+          .map((list: any) => new ListModel({
             id: list.id,
             name: list.name,
             boardId: boardId,
@@ -54,7 +55,7 @@ class ListStore {
     }
   };
 
-  createList = async (boardId: string, name: string): Promise<TrelloList | null> => {
+  createList = async (boardId: string, name: string): Promise<ListModel | null> => {
     const { token, clientId } = this.getAuthData();
     if (!token || !clientId || !boardId) return null;
 
@@ -82,13 +83,13 @@ class ListStore {
 
       const newList = await response.json();
       
-      const listToAdd: TrelloList = {
+      const listToAdd = new ListModel({
         id: newList.id,
         name: newList.name,
         boardId: boardId,
         closed: false,
         pos: newList.pos || 0
-      };
+      });
 
       runInAction(() => {
         if (!this.boardLists[boardId]) {
@@ -116,36 +117,17 @@ class ListStore {
     const { token, clientId } = this.getAuthData();
     if (!token || !clientId) return;
 
-    try {
-      const response = await fetch(
-        `https://api.trello.com/1/lists/${listId}?key=${clientId}&token=${token}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ name: newName })
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to update list: ${response.statusText}`);
+    // Find the list model and use its updateName method
+    let targetList: ListModel | null = null;
+    Object.keys(this.boardLists).forEach(boardId => {
+      const list = this.boardLists[boardId].find(list => list.id === listId);
+      if (list) {
+        targetList = list;
       }
+    });
 
-      // Update local state
-      runInAction(() => {
-        Object.keys(this.boardLists).forEach(boardId => {
-          const listIndex = this.boardLists[boardId].findIndex(list => list.id === listId);
-          if (listIndex !== -1) {
-            this.boardLists[boardId][listIndex].name = newName;
-          }
-        });
-      });
-    } catch (error) {
-      console.error('Error updating list:', error);
-      runInAction(() => {
-        this.error = error instanceof Error ? error.message : 'Failed to update list';
-      });
+    if (targetList) {
+      await (targetList as ListModel).updateName(newName, { token, clientId });
     }
   };
 
@@ -186,7 +168,7 @@ class ListStore {
   // Alias for compatibility with useBoardData hook
   fetchBoardLists = this.fetchLists;
 
-  getListsForBoard = (boardId: string): TrelloList[] => {
+  getListsForBoard = (boardId: string): ListModel[] => {
     return this.boardLists[boardId] || [];
   };
 
