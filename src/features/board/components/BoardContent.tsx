@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { BoardContentProps } from '../../../types';
 import { useLists, useCards } from '../../../contexts';
+import { TrelloCard } from '../../../types';
 import BoardList from './BoardList';
 import AddListForm from './AddListForm';
 import EmptyBoardState from './EmptyBoardState';
 import AddListButton from './AddListButton';
+import TaskModal from './TaskModal';
 
 interface ExtendedBoardContentProps extends BoardContentProps {
   listsMap?: Map<string, any>;
@@ -24,20 +26,63 @@ const BoardContent: React.FC<ExtendedBoardContentProps> = observer(({
   onShowAddListForm,
   cardsByListMap,
 }) => {
-  const { reorderLists, updateList } = useLists();
-  const { moveCard, reorderCardsInList, renameCard } = useCards();
+  const { reorderLists, updateList, closeList } = useLists();
+  const { moveCard, reorderCardsInList, renameCard, updateCardDescription, deleteCard, addComment } = useCards();
 
-  const handleRenameList = (listId: string, newName: string) => {
+  const [selectedTask, setSelectedTask] = useState<TrelloCard | null>(null);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+
+  const handleRenameList = useCallback((listId: string, newName: string) => {
     updateList(listId, newName);
-  };
+  }, [updateList]);
 
-  const handleRenameTask = (taskId: string, newName: string) => {
+  const handleRenameTask = useCallback((taskId: string, newName: string) => {
     if (boardId) {
       renameCard(boardId, taskId, newName);
     }
-  };
+  }, [boardId, renameCard]);
 
-  const handleDragEnd = (result: DropResult) => {
+  const handleCloseList = useCallback(async (listId: string) => {
+    const success = await closeList(listId);
+    if (success) {
+      // Refresh the board data to reflect the closed list
+      onTaskAdded(); // This will trigger a refresh
+    }
+  }, [closeList, onTaskAdded]);
+
+  const handleTaskClick = useCallback((taskId: string) => {
+    const task = cards.find(card => card.id === taskId);
+    if (task) {
+      setSelectedTask(task);
+      setIsTaskModalOpen(true);
+    }
+  }, [cards]);
+
+  const handleUpdateDescription = useCallback(async (cardId: string, description: string) => {
+    await updateCardDescription(cardId, description);
+    // Refresh the board data
+    onTaskAdded();
+  }, [updateCardDescription, onTaskAdded]);
+
+  const handleDeleteTask = useCallback(async (cardId: string) => {
+    const success = await deleteCard(cardId);
+    if (success) {
+      // Refresh the board data
+      onTaskAdded();
+    }
+  }, [deleteCard, onTaskAdded]);
+
+  const handleAddComment = useCallback(async (cardId: string, comment: string) => {
+    await addComment(cardId, comment);
+    // Comments are stored on Trello, no need to refresh local state
+  }, [addComment]);
+
+  const handleCloseTaskModal = useCallback(() => {
+    setIsTaskModalOpen(false);
+    setSelectedTask(null);
+  }, []);
+
+  const handleDragEnd = useCallback((result: DropResult) => {
     if (!result.destination || !boardId) {
       return;
     }
@@ -66,11 +111,13 @@ const BoardContent: React.FC<ExtendedBoardContentProps> = observer(({
         moveCard(boardId, draggableId, sourceListId, destinationListId, destination.index);
       }
     }
-  };
+  }, [boardId, reorderLists, reorderCardsInList, moveCard]);
+
+
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="flex space-x-2 sm:space-x-4 overflow-x-auto pb-4 -mb-4">
+      <div className="flex space-x-2 sm:space-x-4 pb-4 -mb-4">
         {/* Empty Board State */}
         {lists.length === 0 && !showNewListInput && (
           <EmptyBoardState onAddFirstList={onShowAddListForm} />
@@ -103,10 +150,7 @@ const BoardContent: React.FC<ExtendedBoardContentProps> = observer(({
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
-                        className={`${snapshot.isDragging
-                          ? 'opacity-75 transform rotate-3 z-50'
-                          : ''
-                          }`}
+                        className={`${snapshot.isDragging ? 'opacity-75 transform rotate-3 z-50' : ''}`}
                         style={{
                           ...provided.draggableProps.style,
                           // Ensure proper z-index during drag
@@ -119,6 +163,8 @@ const BoardContent: React.FC<ExtendedBoardContentProps> = observer(({
                           onTaskAdded={onTaskAdded}
                           onRenameList={handleRenameList}
                           onTaskRename={handleRenameTask}
+                          onCloseList={handleCloseList}
+                          onTaskClick={handleTaskClick}
                         />
                       </div>
                     )}
@@ -144,6 +190,19 @@ const BoardContent: React.FC<ExtendedBoardContentProps> = observer(({
           )
         )}
       </div>
+
+      {selectedTask && (
+        <TaskModal
+          task={selectedTask}
+          isOpen={isTaskModalOpen}
+          onClose={handleCloseTaskModal}
+          listName={lists.find(list => list.id === selectedTask.listId)?.name || 'Unknown List'}
+          onUpdateDescription={handleUpdateDescription}
+          onDeleteTask={handleDeleteTask}
+          onAddComment={handleAddComment}
+          onTaskRename={handleRenameTask}
+        />
+      )}
     </DragDropContext>
   );
 });

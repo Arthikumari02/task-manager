@@ -1,4 +1,4 @@
-import { makeAutoObservable } from 'mobx';
+import { makeAutoObservable, runInAction } from 'mobx';
 import { ListModel } from '../../models';
 
 class ListStore {
@@ -40,21 +40,28 @@ class ListStore {
 
   fetchLists = async (boardId: string, onSuccess: (lists: ListModel[]) => void): Promise<void> => {
     const { token, clientId } = this.getAuthData();
-    if (!token || !clientId || !boardId) return;
+    console.log('ListStore fetchLists called:', { boardId, token: !!token, clientId: !!clientId });
+    
+    if (!token || !clientId || !boardId) {
+      console.log('ListStore fetchLists: Missing auth data or boardId');
+      return;
+    }
 
     this.isLoading = true;
     this.error = null;
 
     try {
-      const response = await fetch(
-        `https://api.trello.com/1/boards/${boardId}/lists?key=${clientId}&token=${token}&filter=open`
-      );
+      const url = `https://api.trello.com/1/boards/${boardId}/lists?key=${clientId}&token=${token}&filter=open`;
+      console.log('ListStore fetchLists: Making API call to:', url);
+      
+      const response = await fetch(url);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch lists: ${response.statusText}`);
       }
 
       const trelloLists = await response.json();
+      console.log('ListStore fetchLists: API response:', trelloLists);
 
       const listModels = trelloLists.map((list: any) => {
         const listModel = new ListModel({
@@ -150,8 +157,10 @@ class ListStore {
     lists.splice(destinationIndex, 0, movedList);
 
     // Update local order: adjust pos hints immediately
-    lists.forEach((list, idx) => {
-      list.pos = list.pos ?? 0;
+    runInAction(() => {
+      lists.forEach((list, idx) => {
+        list.pos = list.pos ?? 0;
+      });
     });
 
     // Calculate new position for Trello API
@@ -191,10 +200,12 @@ class ListStore {
       const updatedList = await response.json();
 
       // Update the list's position with the actual value returned from Trello
-      const target = this.listsMap.get(movedList.id);
-      if (target) {
-        target.pos = updatedList.pos;
-      }
+      runInAction(() => {
+        const target = this.listsMap.get(movedList.id);
+        if (target) {
+          target.pos = updatedList.pos;
+        }
+      });
 
     } catch (error) {
       console.error('Error reordering lists:', error);
@@ -233,6 +244,46 @@ class ListStore {
       list.removeCardId(cardId);
     }
   }
+
+  closeList = async (listId: string): Promise<boolean> => {
+    const { token, clientId } = this.getAuthData();
+    if (!token || !clientId) return false;
+
+    try {
+      const response = await fetch(
+        `https://api.trello.com/1/lists/${listId}?key=${clientId}&token=${token}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ closed: true })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to close list: ${response.statusText}`);
+      }
+
+      // Remove the list from local state
+      this.listsMap.delete(listId);
+      return true;
+
+    } catch (error) {
+      console.error('Error closing list:', error);
+      this.error = error instanceof Error ? error.message : 'Failed to close list';
+      return false;
+    }
+  };
+
+  clearListsForBoard = (boardId: string) => {
+    console.log('ListStore: Clearing lists for board:', boardId);
+    const listsToRemove = Array.from(this.listsMap.values()).filter(list => list.boardId === boardId);
+    listsToRemove.forEach(list => {
+      this.listsMap.delete(list.id);
+    });
+    console.log('ListStore: Cleared', listsToRemove.length, 'lists. Remaining:', this.listsMap.size);
+  };
 
   reset = () => {
     this.listsMap.clear();

@@ -1,3 +1,4 @@
+import { action, makeObservable, observable } from 'mobx';
 import { BaseModel } from './BaseModel';
 
 export class ListModel extends BaseModel {
@@ -17,6 +18,18 @@ export class ListModel extends BaseModel {
     this.boardId = data.boardId;
     this.closed = data.closed;
     this.pos = data.pos;
+
+    // Automatically makes fields observable and methods actions
+    makeObservable(this,{
+      boardId: observable,
+      closed: observable,
+      pos: observable,
+      addCardId: action,
+      removeCardId: action,
+      hasCardId: action,
+      getCardIds: action,
+      getCardCount: action,
+    });
   }
 
   // Card ID Management Methods
@@ -47,13 +60,11 @@ export class ListModel extends BaseModel {
         `https://api.trello.com/1/lists/${this.id}?key=${authData.clientId}&token=${authData.token}`,
         {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ name: newName })
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: newName }),
         }
       );
-      
+
       if (response.ok) {
         this.name = newName;
         return true;
@@ -71,15 +82,15 @@ export class ListModel extends BaseModel {
         `https://api.trello.com/1/lists/${this.id}?key=${authData.clientId}&token=${authData.token}`,
         {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ pos: newPos })
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pos: newPos }),
         }
       );
-      
+
       if (response.ok) {
-        this.pos = typeof newPos === 'number' ? newPos : this.pos;
+        if (typeof newPos === 'number') {
+          this.pos = newPos;
+        }
         return true;
       }
       return false;

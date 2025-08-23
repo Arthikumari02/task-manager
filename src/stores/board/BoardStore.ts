@@ -24,31 +24,47 @@ class BoardStore {
 
   fetchBoards = async (organizationId: string): Promise<void> => {
     const { token, clientId } = this.getAuthData();
-    if (!token || !clientId || !organizationId) return;
+    if (!token || !clientId) {
+      console.error('Missing token or clientId');
+      return;
+    }
+    if (!organizationId) {
+      console.error('No organizationId provided');
+      return;
+    }
 
     this.isLoading = true;
     this.error = null;
 
     try {
-      const response = await fetch(
-        `https://api.trello.com/1/organizations/${organizationId}/boards?key=${clientId}&token=${token}&filter=open`
-      );
+      const url = `https://api.trello.com/1/organizations/${organizationId}/boards?key=${clientId}&token=${token}&filter=open`;
+      console.log('Fetching boards from:', url);
+      
+      const response = await fetch(url);
+      console.log('Boards response status:', response.status);
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch boards: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('Failed to fetch boards:', response.status, errorText);
+        throw new Error(`Failed to fetch boards: ${response.status} ${response.statusText}`);
       }
 
       const trelloBoards = await response.json();
-      
-      this.boards = trelloBoards.map((board: any) => ({
-        id: board.id,
-        name: board.name,
-        desc: board.desc || '',
-        organizationId: organizationId,
-        closed: board.closed || false,
-        url: board.url || '',
-        prefs: board.prefs || {}
-      }));
+      console.log('Fetched boards:', trelloBoards);
+
+      this.boards = trelloBoards.map((board: any) => {
+        const boardData = {
+          id: board.id,
+          name: board.name,
+          desc: board.desc || '',
+          organizationId: organizationId,
+          closed: board.closed || false,
+          url: board.url || '',
+          prefs: board.prefs || {}
+        };
+        console.log('Mapped board:', boardData);
+        return boardData;
+      });
 
       // Create BoardModel instances
       this.boards.forEach(boardData => {
@@ -100,7 +116,7 @@ class BoardStore {
       }
 
       const newBoard = await response.json();
-      
+
       const boardToAdd: TrelloBoard = {
         id: newBoard.id,
         name: newBoard.name,
@@ -113,7 +129,7 @@ class BoardStore {
       };
 
       this.boards.push(boardToAdd);
-      
+
       // Create BoardModel instance
       const boardModel = new BoardModel({
         id: boardToAdd.id,
@@ -124,7 +140,7 @@ class BoardStore {
         organizationId: boardToAdd.organizationId
       });
       this.boardModels.set(boardToAdd.id, boardModel);
-      
+
       return boardToAdd;
 
     } catch (error) {
@@ -157,6 +173,48 @@ class BoardStore {
       board.removeListId(listId);
     }
   }
+
+  updateBoardName = async (boardId: string, newName: string): Promise<boolean> => {
+    const { token, clientId } = this.getAuthData();
+    if (!token || !clientId) return false;
+
+    try {
+      const response = await fetch(
+        `https://api.trello.com/1/boards/${boardId}?key=${clientId}&token=${token}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name: newName })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to update board name: ${response.statusText}`);
+      }
+
+      const updatedBoard = await response.json();
+
+      // Update local state
+      const boardIndex = this.boards.findIndex(board => board.id === boardId);
+      if (boardIndex !== -1) {
+        this.boards[boardIndex].name = updatedBoard.name;
+      }
+
+      const boardModel = this.boardModels.get(boardId);
+      if (boardModel) {
+        boardModel.name = updatedBoard.name;
+      }
+
+      return true;
+
+    } catch (error) {
+      console.error('Error updating board name:', error);
+      this.error = error instanceof Error ? error.message : 'Failed to update board name';
+      return false;
+    }
+  };
 
   reset = () => {
     this.boards = [];

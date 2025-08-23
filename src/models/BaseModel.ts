@@ -8,6 +8,7 @@ export abstract class BaseModel {
     this.id = id;
     this.name = name;
     makeObservable(this, {
+      id: observable,
       name: observable,
       setName: action,
       updateName: action

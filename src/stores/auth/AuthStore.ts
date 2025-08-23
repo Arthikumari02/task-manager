@@ -1,11 +1,11 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 
 interface UserInfo {
-  id: string;
-  fullName: string;
-  initials: string;
-  email: string;
-  username: string;
+    id: string;
+    fullName: string;
+    initials: string;
+    email: string;
+    username: string;
 }
 
 class AuthStore {
@@ -31,12 +31,16 @@ class AuthStore {
         if (this.clientId) {
             localStorage.setItem('trello_clientId', this.clientId);
         }
+        // Fetch user info immediately after login
+        this.fetchUserInfo();
     };
 
     logout = () => {
         this.token = null;
         this.userInfo = null;
         localStorage.removeItem('trello_token');
+        // Also remove stored user info
+        localStorage.removeItem('trello_userInfo');
     };
 
     fetchUserInfo = async (): Promise<void> => {
@@ -53,18 +57,25 @@ class AuthStore {
             }
 
             const userData = await response.json();
-            
+
+            const userInfo = {
+                id: userData.id,
+                fullName: userData.fullName,
+                initials: userData.initials,
+                email: userData.email,
+                username: userData.username
+            };
+
             runInAction(() => {
-                this.userInfo = {
-                    id: userData.id,
-                    fullName: userData.fullName,
-                    initials: userData.initials,
-                    email: userData.email,
-                    username: userData.username
-                };
+                this.userInfo = userInfo;
             });
+
+            // Store user info in localStorage for persistence
+            localStorage.setItem('trello_userInfo', JSON.stringify(userInfo));
         } catch (error) {
             console.error('Error fetching user info:', error);
+            // If fetch fails, try to load from localStorage
+            this.loadUserInfoFromStorage();
         } finally {
             runInAction(() => {
                 this.isLoadingUserInfo = false;
@@ -76,6 +87,21 @@ class AuthStore {
         const storedToken = localStorage.getItem('trello_token');
         if (storedToken) {
             this.token = storedToken;
+            // Load user info from storage first (for immediate display)
+            this.loadUserInfoFromStorage();
+            // Then fetch fresh user info from API
+            this.fetchUserInfo();
+        }
+    };
+
+    private loadUserInfoFromStorage = () => {
+        const storedUserInfo = localStorage.getItem('trello_userInfo');
+        if (storedUserInfo) {
+            try {
+                this.userInfo = JSON.parse(storedUserInfo);
+            } catch (error) {
+                console.error('Error parsing stored user info:', error);
+            }
         }
     };
 }

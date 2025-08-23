@@ -1,12 +1,13 @@
+import { makeObservable, observable, action } from 'mobx';
 import { BaseModel } from './BaseModel';
 
 export class CardModel extends BaseModel {
-  desc: string;
-  closed: boolean;
-  pos: number;
-  listId: string;
-  boardId: string;
-  url: string;
+   desc: string;
+   closed: boolean;
+   pos: number;
+   listId: string;
+   boardId: string;
+   url: string;
 
   constructor(data: {
     id: string;
@@ -25,6 +26,21 @@ export class CardModel extends BaseModel {
     this.listId = data.listId;
     this.boardId = data.boardId;
     this.url = data.url;
+    
+    makeObservable(this,{
+      desc: observable,
+      closed: observable,
+      pos: observable,
+      listId: observable,
+      boardId: observable,
+      url: observable,
+      updateNameOnServer: action,
+      moveToList: action,
+      updatePositionOnServer: action,
+      isValid: action,
+      belongsToList: action,
+      belongsToBoard: action,
+    });
   }
 
   // Card Operations
@@ -99,6 +115,7 @@ export class CardModel extends BaseModel {
       return false;
     }
   }
+
   // Validation Methods
   isValid(): boolean {
     return this.id.length > 0 && 

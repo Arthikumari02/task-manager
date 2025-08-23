@@ -8,6 +8,51 @@ A modern task management application built with React and TypeScript that integr
 - **Modern UI**: Clean, responsive design with Tailwind CSS
 - **Task Management**: Full integration with Trello boards and cards
 - **Real-time Sync**: Stay synchronized with your Trello data
+- **List Management**: Create, rename, and close lists
+- **Board Management**: Edit board names inline
+- **Drag & Drop**: Reorder lists and cards with smooth animations
+- **Task Modal**: Detailed task view with description editing and comments
+- **Search Functionality**: Search tasks across all boards
+- **Task Operations**: Delete tasks, update descriptions, add comments
+
+## New Features
+
+### Task Modal Functionality
+- **Click any task** to open a detailed modal view
+- **Edit task descriptions** inline with save/cancel options
+- **Add comments** to tasks with real-time updates
+- **Delete tasks** with confirmation via trash icon
+- **View task details** including list name and full description
+
+### Search Functionality
+- **Real-time search** with debounced input (300ms delay)
+- **Search across all boards** using Trello's search API
+- **No results view** with helpful messaging when no tasks found
+- **Search results dropdown** with task previews
+- **Click to navigate** to the board containing the task
+
+### Close List Functionality
+- Click the ellipsis (⋮) button on any list header
+- Select "Close List" from the context menu
+- Lists are permanently closed via Trello API
+- UI updates immediately to reflect changes
+
+### Edit Board Name
+- Click on the board name in the header to edit inline
+- Press Enter to save or Escape to cancel
+- Changes are synced with Trello API in real-time
+
+## API Endpoints Used
+
+### Task Management
+- `PUT https://api.trello.com/1/cards/{CARD_ID}?key={API_KEY}&token={TOKEN}` - Update card details
+- `POST https://api.trello.com/1/cards/{CARD_ID}/actions/comments?key={API_KEY}&token={TOKEN}` - Add comments
+
+### Search
+- `GET https://api.trello.com/1/search?key={API_KEY}&token={TOKEN}&query={QUERY}` - Search tasks
+
+### Organization Management
+- `GET https://api.trello.com/1/organizations?key={API_KEY}&token={TOKEN}&displayName={NAME}` - Get organizations
 
 ## Setup Instructions
 

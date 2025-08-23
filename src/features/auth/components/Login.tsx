@@ -6,9 +6,9 @@ import { buildTrelloAuthURL, extractTokenFromFragment, cleanupOAuthURL } from '.
 const Login: React.FC = observer(() => {
   const { login, clientId, fetchUserInfo } = useAuth();
   const { fetchOrganizations } = useOrganizations();
-  
+
   const handleTrelloLogin = () => {
-    
+
     if (!clientId) {
       alert('Trello Client ID not found. Please check your environment configuration.');
       return;
@@ -16,7 +16,7 @@ const Login: React.FC = observer(() => {
 
     // Use the proper OAuth URL builder with clientId
     const trelloAuthUrl = buildTrelloAuthURL(clientId);
-    
+
     // Open Trello OAuth in the same window
     window.location.href = trelloAuthUrl;
   };
@@ -25,7 +25,7 @@ const Login: React.FC = observer(() => {
   React.useEffect(() => {
     const fragment = window.location.hash;
     const token = extractTokenFromFragment(fragment);
-    
+
     if (token) {
       login(token);
       // Fetch user info after login
@@ -34,7 +34,7 @@ const Login: React.FC = observer(() => {
       // Clean up URL to remove sensitive token information
       cleanupOAuthURL();
     }
-  }, [login, fetchUserInfo, fetchOrganizations]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#0079BF] flex flex-col items-center justify-center p-4 sm:p-6">
@@ -42,7 +42,7 @@ const Login: React.FC = observer(() => {
         <img src="/Icon.png" alt="Task Manager Icon" className="w-8 h-8 sm:w-10 sm:h-10" />
         <h1 className="text-2xl sm:text-3xl md:text-[48px] font-pacifico text-white ml-2">Task Manager</h1>
       </div>
-      
+
       <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8 max-w-sm sm:max-w-md w-full mx-4">
         <div className="text-center mb-6 sm:mb-8">
           <div className="mb-4 sm:mb-6">

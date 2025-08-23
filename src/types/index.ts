@@ -43,17 +43,20 @@ export interface TrelloOrganization {
 // Component Props Types
 export interface BoardHeaderProps {
   boardName: string;
+  boardId?: string;
+  onBoardNameChange?: (newName: string) => void;
 }
 
 export interface BoardContentProps {
-  boardId: string | undefined;
-  lists: TrelloList[];
+  boardId?: string;
+  lists: any[];
   cards: TrelloCard[];
   showNewListInput: boolean;
   onTaskAdded: () => void;
   onListAdded: () => void;
   onCancelAddList: () => void;
   onShowAddListForm: () => void;
+  isLoading: boolean;
 }
 
 export interface BoardListProps {
@@ -62,6 +65,8 @@ export interface BoardListProps {
   onTaskAdded: () => void;
   onRenameList: (listId: string, newName: string) => void;
   onTaskRename: (taskId: string, newName: string) => void;
+  onCloseList?: (listId: string) => void;
+  onTaskClick?: (taskId: string) => void;
 }
 
 export interface TaskCardProps {
@@ -70,6 +75,7 @@ export interface TaskCardProps {
   desc?: string;
   index: number;
   onTaskRename: (taskId: string, newName: string) => void;
+  onTaskClick?: (taskId: string) => void;
 }
 
 export interface AddTaskFormProps {
