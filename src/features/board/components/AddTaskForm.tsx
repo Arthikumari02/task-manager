@@ -1,16 +1,21 @@
 import React, { useState } from 'react';
-import { useCards } from '../../../contexts';
+import { useCards, useLists } from '../../../contexts';
 import { AddTaskFormProps } from '../../../types';
 
 const AddTaskForm: React.FC<AddTaskFormProps> = ({ listId, boardId, onTaskAdded, onCancel }) => {
   const { createCard, isCreating } = useCards();
+  const { addCardToList } = useLists();
   const [taskTitle, setTaskTitle] = useState('');
+
+  const onSuccessCreateCard = (cardId: string) => {
+    addCardToList(cardId, listId);
+  };
 
   const handleAddTask = async () => {
     const title = taskTitle.trim();
     if (!title) return;
 
-    const newCard = await createCard(title, listId, boardId);
+    const newCard = await createCard(title, listId, onSuccessCreateCard);
     if (newCard) {
       setTaskTitle('');
       onTaskAdded();

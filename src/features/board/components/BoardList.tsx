@@ -5,22 +5,26 @@ import { BoardListProps } from '../../../types';
 import TaskCard from './TaskCard';
 import AddTaskForm from './AddTaskForm';
 import ListContextMenu from './ListContextMenu';
+import { useCards, useLists } from '../../../contexts';
+import { CardModel } from '../../../models';
 
-const BoardList: React.FC<BoardListProps> = observer(({ 
-  list, 
-  cards, 
-  onTaskAdded, 
-  onRenameList, 
-  onTaskRename, 
-  onCloseList, 
-  onTaskClick 
+const BoardList: React.FC<BoardListProps> = observer(({
+  list,
+  cards,
+  onTaskAdded,
+  onRenameList,
+  onTaskRename,
+  onCloseList,
+  onTaskClick
 }) => {
   const [showAddTaskForm, setShowAddTaskForm] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [title, setTitle] = useState(list.name);
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
-
+  const { getListById } = useLists()
+  const { getCardById } = useCards()
+  const listModel = getListById(list.id)
   const handleTaskAdded = useCallback(() => {
     setShowAddTaskForm(false);
     // Call the parent's onTaskAdded to refresh the data
@@ -79,7 +83,12 @@ const BoardList: React.FC<BoardListProps> = observer(({
   }, []);
 
   // Cards are now pre-filtered and passed directly from parent component using Map
-  const listCards = cards || []; // Ensure we have an array even if cards is undefined
+  const listCards: CardModel[] = []
+
+  listModel?.cardIdsList.map((cardId) => {
+    const cardModel = getCardById(cardId)
+    cardModel && listCards.push(cardModel)
+  })
 
   return (
     <div className="bg-[#F4F5F7] rounded-sm px-3 py-2 w-64 flex-shrink-0 min-h-[80px] h-fit">
@@ -103,7 +112,7 @@ const BoardList: React.FC<BoardListProps> = observer(({
             {title}
           </h3>
         )}
-        
+
         {/* Ellipsis button */}
         <button
           onClick={handleEllipsisClick}
@@ -122,17 +131,16 @@ const BoardList: React.FC<BoardListProps> = observer(({
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className={`min-h-[2px] ${
-              snapshot.isDraggingOver ? 'bg-blue-100' : ''
-            }`}
+            className={`min-h-[2px] ${snapshot.isDraggingOver ? 'bg-blue-100' : ''
+              }`}
           >
             {listCards.map((card, index) => (
-              <TaskCard 
-                key={card.id} 
-                id={card.id} 
-                name={card.name} 
-                desc={card.desc} 
-                index={index} 
+              <TaskCard
+                key={card.id}
+                id={card.id}
+                name={card.name}
+                desc={card.desc}
+                index={index}
                 onTaskRename={onTaskRename}
                 onTaskClick={onTaskClick}
               />

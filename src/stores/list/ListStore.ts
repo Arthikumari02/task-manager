@@ -41,7 +41,7 @@ class ListStore {
   fetchLists = async (boardId: string, onSuccess: (lists: ListModel[]) => void): Promise<void> => {
     const { token, clientId } = this.getAuthData();
     console.log('ListStore fetchLists called:', { boardId, token: !!token, clientId: !!clientId });
-    
+
     if (!token || !clientId || !boardId) {
       console.log('ListStore fetchLists: Missing auth data or boardId');
       return;
@@ -53,7 +53,7 @@ class ListStore {
     try {
       const url = `https://api.trello.com/1/boards/${boardId}/lists?key=${clientId}&token=${token}&filter=open`;
       console.log('ListStore fetchLists: Making API call to:', url);
-      
+
       const response = await fetch(url);
 
       if (!response.ok) {
@@ -211,7 +211,7 @@ class ListStore {
       console.error('Error reordering lists:', error);
       this.error = error instanceof Error ? error.message : 'Failed to reorder lists';
       // Re-fetch to restore
-      await this.fetchLists(boardId, () => {});
+      await this.fetchLists(boardId, () => { });
     }
   };
 

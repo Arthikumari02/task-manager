@@ -1,4 +1,4 @@
-import { action, makeObservable, observable } from 'mobx';
+import { action, computed, makeObservable, observable } from 'mobx';
 import { BaseModel } from './BaseModel';
 
 export class ListModel extends BaseModel {
@@ -20,7 +20,7 @@ export class ListModel extends BaseModel {
     this.pos = data.pos;
 
     // Automatically makes fields observable and methods actions
-    makeObservable(this,{
+    makeObservable(this, {
       boardId: observable,
       closed: observable,
       pos: observable,
@@ -29,6 +29,7 @@ export class ListModel extends BaseModel {
       hasCardId: action,
       getCardIds: action,
       getCardCount: action,
+      cardIdsList: computed
     });
   }
 
@@ -51,6 +52,10 @@ export class ListModel extends BaseModel {
 
   getCardCount(): number {
     return this.cardIds.size;
+  }
+
+  get cardIdsList(): string[] {
+    return Array.from(this.cardIds);
   }
 
   // List Operations

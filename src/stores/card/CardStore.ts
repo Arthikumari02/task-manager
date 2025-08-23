@@ -96,7 +96,7 @@ class CardStore {
     return cardsByList;
   };
 
-  fetchCards = async (boardId: string): Promise<void> => {
+  fetchCards = async (boardId: string, onSuccessFetch: (cards: CardModel[]) => void): Promise<void> => {
     const { token, clientId } = this.getAuthData();
     if (!token || !clientId || !boardId) return;
 
@@ -115,23 +115,21 @@ class CardStore {
       const trelloCards = await response.json();
 
       // Create CardModel instances and add to cardsMap
-      trelloCards
-        .filter((card: any) => !card.closed)
-        .forEach((card: any) => {
-          const cardModel = new CardModel({
-            id: card.id,
-            name: card.name,
-            desc: card.desc || '',
-            closed: card.closed || false,
-            pos: card.pos || 0,
-            listId: card.idList,
-            boardId: boardId,
-            url: card.url || ''
-          });
-
-          this.cardsMap.set(cardModel.id, cardModel);
+      const cardModels = trelloCards.map((card: any) => {
+        const cardModel = new CardModel({
+          id: card.id,
+          name: card.name,
+          desc: card.desc || '',
+          closed: card.closed || false,
+          pos: card.pos || 0,
+          listId: card.idList,
+          boardId: boardId,
+          url: card.url || ''
         });
-
+        this.cardsMap.set(cardModel.id, cardModel);
+        return cardModel
+      }).filter((card: CardModel) => !card.closed);
+      onSuccessFetch(cardModels);
     } catch (err) {
       console.error('Error fetching cards:', err);
       this.error = err instanceof Error ? err.message : 'Failed to fetch cards';
@@ -140,7 +138,7 @@ class CardStore {
     }
   };
 
-  createCard = async (name: string, listId: string, boardId: string): Promise<TrelloCard | null> => {
+  createCard = async (name: string, listId: string, onSuccessCreate: (cardId: string) => void): Promise<TrelloCard | null> => {
     const { token, clientId } = this.getAuthData();
     if (!token || !clientId || !listId) return null;
 
@@ -196,6 +194,8 @@ class CardStore {
         this.cardsMap.set(cardModel.id, cardModel);
         this.isCreating = false;
       });
+
+      onSuccessCreate(cardToAdd.id);
 
       return cardToAdd;
 

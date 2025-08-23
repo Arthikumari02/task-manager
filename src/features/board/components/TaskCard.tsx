@@ -54,9 +54,8 @@ const TaskCard: React.FC<TaskCardProps> = ({ id, name, desc, index, onTaskRename
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          className={`bg-white rounded-sm px-2 py-2 shadow-sm text-sm cursor-pointer hover:bg-gray-50 break-words transition-opacity ${
-            snapshot.isDragging ? 'opacity-50' : ''
-          }`}
+          className={`bg-white rounded-sm px-2 py-2 shadow-sm text-sm cursor-pointer hover:bg-gray-50 break-words transition-opacity ${snapshot.isDragging ? 'opacity-50' : ''
+            }`}
           onClick={handleClick}
           onDoubleClick={handleDoubleClick}
         >

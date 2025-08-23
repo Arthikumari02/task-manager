@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useAuth, useBoards, useLists, useCards, useOrganizations } from '../contexts';
 import { UseBoardDataReturn, TrelloCard } from '../types';
-import { ListModel } from '../models';
+import { CardModel, ListModel } from '../models';
 
 export const useBoardData = (boardId: string | undefined): UseBoardDataReturn => {
   const { token, clientId } = useAuth();
   const { boards } = useBoards();
-  const { fetchBoardLists, getListsMap, getListsForBoard, clearListsForBoard } = useLists();
+  const { fetchBoardLists, getListsMap, getListsForBoard, clearListsForBoard, getListById } = useLists();
   const { fetchBoardCards, getCardsByListMap, getCardsForBoard } = useCards();
   const { organizations, fetchOrganizations } = useOrganizations();
 
@@ -24,7 +24,12 @@ export const useBoardData = (boardId: string | undefined): UseBoardDataReturn =>
 
   // Sort lists by position (create new array to avoid MobX mutation error)
   const sortedLists = hasInitialLoad ? lists.slice().sort((a, b) => (a.pos || 0) - (b.pos || 0)) : [];
-
+  const onSuccessFetchCards = (cards: CardModel[]) => {
+    cards.map((card) => {
+      const list = getListById(card.listId)
+      list?.addCardId(card.id)
+    })
+  }
   useEffect(() => {
     if (!boardId) {
       setIsLoading(false);
@@ -75,9 +80,10 @@ export const useBoardData = (boardId: string | undefined): UseBoardDataReturn =>
         console.log('useBoardData: Fetching lists and cards...');
         await Promise.all([
           fetchBoardLists(boardId, (fetchedLists) => {
+            fetchBoardCards(boardId, onSuccessFetchCards)
             console.log('useBoardData: fetchBoardLists callback called with:', fetchedLists.length, 'lists');
           }),
-          fetchBoardCards(boardId)
+
         ]);
 
         console.log('useBoardData: Finished fetching board data');
@@ -100,17 +106,6 @@ export const useBoardData = (boardId: string | undefined): UseBoardDataReturn =>
     try {
       // Set loading state
       setIsLoading(true);
-
-      // Clear any existing data first
-      clearListsForBoard(boardId);
-
-      // Fetch fresh data
-      await Promise.all([
-        fetchBoardLists(boardId, (fetchedLists) => {
-          console.log('Refreshed lists after task addition:', fetchedLists.length);
-        }),
-        fetchBoardCards(boardId)
-      ]);
 
       // Ensure we have the latest data
       setHasInitialLoad(true);
