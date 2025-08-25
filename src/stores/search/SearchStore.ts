@@ -42,7 +42,7 @@ class SearchStore {
       }
 
       const data = await response.json();
-      
+
       // Filter out closed cards and map to TrelloCard format
       const cards: TrelloCard[] = (data.cards || [])
         .filter((card: any) => !card.closed)

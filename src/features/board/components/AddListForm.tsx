@@ -1,22 +1,33 @@
 import React, { useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { useLists } from '../../../contexts';
+import { useLists, useBoards } from '../../../contexts';
 import { AddListFormProps } from '../../../types';
+import { BoardModel } from '../../../models';
 
-const AddListForm: React.FC<AddListFormProps> = observer(({ 
-  boardId, 
-  onListAdded, 
-  onCancel, 
-  isFirstList = false 
+const AddListForm: React.FC<AddListFormProps> = observer(({
+  boardId,
+  onListAdded,
+  onCancel,
+  isFirstList = false
 }) => {
   const { createList, isCreating } = useLists();
+  const { getBoardById } = useBoards();
   const [listTitle, setListTitle] = useState('');
 
   const handleAddList = async () => {
     const title = listTitle.trim();
     if (!title) return;
 
-    const newList = await createList(boardId, title);
+    const newList = await createList(boardId, title, (listModel) => {
+      // Update the board model with the new list ID
+      const boardModel = getBoardById(boardId);
+      if (boardModel && boardModel instanceof BoardModel) {
+        if (!boardModel.hasListId(listModel.id)) {
+          boardModel.addListId(listModel.id);
+        }
+      }
+    });
+
     if (newList) {
       setListTitle('');
       onListAdded();

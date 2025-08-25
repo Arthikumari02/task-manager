@@ -4,13 +4,13 @@ import { useParams } from 'react-router-dom';
 import Header from '../../../components/Header';
 import Loading from '../../../components/Loading';
 import { useBoardData } from '../../../hooks';
-import { ListProvider, CardProvider, BoardProvider } from '../../../contexts';
+import { ListProvider, CardProvider } from '../../../contexts';
 import { useBoards } from '../../../contexts';
 import BoardHeader from './BoardHeader';
 import BoardContent from './BoardContent';
 
-const BoardViewContent: React.FC<{ boardId: string | undefined }> = observer(({ boardId }) => {
-  const { boardName, lists, cards, isLoading, handleTaskAdded, listsMap, cardsByListMap } = useBoardData(boardId);
+const BoardViewContent: React.FC<{ boardId: string }> = observer(({ boardId }) => {
+  const { boardName, isLoading, handleTaskAdded } = useBoardData(boardId);
   const { updateBoardName } = useBoards();
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [showNewListInput, setShowNewListInput] = useState(false);
@@ -55,16 +55,10 @@ const BoardViewContent: React.FC<{ boardId: string | undefined }> = observer(({ 
       ) : (
         <BoardContent
           boardId={boardId}
-          lists={lists}
-          cards={cards}
           showNewListInput={showNewListInput}
-          onTaskAdded={handleTaskAdded}
           onListAdded={handleListAdded}
           onCancelAddList={handleCancelAddList}
           onShowAddListForm={() => setShowNewListInput(true)}
-          listsMap={listsMap}
-          cardsByListMap={cardsByListMap}
-          isLoading={isLoading}
         />
       )}
     </main>
@@ -72,7 +66,8 @@ const BoardViewContent: React.FC<{ boardId: string | undefined }> = observer(({ 
 });
 
 const BoardView: React.FC = observer(() => {
-  const { boardId } = useParams<{ boardId: string }>();
+  // Ensure boardId is always a string
+  const { boardId = '' } = useParams<{ boardId: string }>();
 
   return (
     <div className="min-h-screen bg-[#0079BF]">
@@ -85,9 +80,7 @@ const BoardView: React.FC = observer(() => {
 
       <ListProvider>
         <CardProvider>
-          <BoardProvider>
-            <BoardViewContent boardId={boardId} />
-          </BoardProvider>
+          <BoardViewContent boardId={boardId} />
         </CardProvider>
       </ListProvider>
     </div>

@@ -52,9 +52,9 @@ const Dashboard: React.FC = observer(() => {
         showNavigation={true}
       />
 
-      <main className="px-4 py-6">
-        {/* Workspace Header - Left aligned */}
-        <div className="flex items-center justify-between mb-8">
+      <main className="flex flex-col item-center px-4 py-6">
+        {/* Workspace Header */}
+        <div className="flex items-center justify-center mb-8 w-full max-w-6xl mx-auto">
           <div className="flex items-center space-x-3">
             <div className="w-12 h-12 bg-orange-500 rounded flex items-center justify-center">
               <span className="text-white font-bold text-xl">
@@ -69,7 +69,7 @@ const Dashboard: React.FC = observer(() => {
           {/* Create New Organization Button - Changed to + icon */}
           <button
             onClick={() => setIsCreateOrgModalOpen(true)}
-            className="w-35 h-10 hidden sm:block bg-blue-500 hover:bg-blue-600 rounded-sm flex items-center justify-center text-white transition-colors duration-200 shadow-lg"
+            className="absolute right-4 h-10 hidden sm:inline-flex items-center justify-center bg-blue-500 hover:bg-blue-600 rounded-sm text-white px-4 transition-colors duration-200 shadow-lg"
             title="Create New Organization"
           >
             Create New Organization
@@ -86,24 +86,32 @@ const Dashboard: React.FC = observer(() => {
         </div>
 
         {/* Boards Section */}
-        <div className="max-w-6xl mx-auto">
+        <div className="w-full flex max-w-6xl mx-auto">
           {/* Loading State */}
           {isLoading ? (
-            <Loading message="Loading" size="large" className="text-white" />
+            <Loading message="Loading" size="large" className="w-full flex items-center justify-center" />
           ) : (
             /* Empty State or Boards Display */
             currentBoards.length === 0 ? (
-              <div className="text-center">
-                <div className="flex items-center justify-center text-white mb-6">
-                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+              <div className="w-full flex flex-col justify-start">
+                <div className="flex items-center text-white mb-6">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                  >
+                    <circle cx="12" cy="7" r="4" />
+                    <path d="M5.5 21a7.5 7.5 0 0 1 13 0" />
                   </svg>
                   <span className="text-lg">You Don't have any board in workspace</span>
                 </div>
 
                 <button
                   onClick={() => setIsCreateModalOpen(true)}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded transition-colors duration-200 flex items-center space-x-2 mx-auto"
+                  className="w-60 h-20 bg-white hover:bg-blue-600 text-black hover:text-white px-6 py-3 rounded transition-colors duration-200 flex items-center space-x-2"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -139,7 +147,7 @@ const Dashboard: React.FC = observer(() => {
                   {/* Create New Board Card - Always show in the same row */}
                   <button
                     onClick={() => setIsCreateModalOpen(true)}
-                    className="bg-white hover:bg-[#2FA9F1] hover:text-white text-gray-600 p-6 rounded-sm transition-colors duration-200 flex items-center justify-center space-x-2 min-h-[120px]"
+                    className="w-60 h-20 bg-white hover:bg-[#2FA9F1] hover:text-white text-gray-600 p-6 rounded-sm transition-colors duration-200 flex items-center justify-center space-x-2 min-h-[120px]"
                   >
                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

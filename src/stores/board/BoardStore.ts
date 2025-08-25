@@ -8,6 +8,7 @@ class BoardStore {
   isLoading: boolean = false;
   error: string | null = null;
   isCreating: boolean = false;
+  currentBoardId: string | null = null;
 
   constructor(private getAuthData: () => { token: string | null; clientId: string | null }) {
     makeAutoObservable(this);
@@ -38,10 +39,8 @@ class BoardStore {
 
     try {
       const url = `https://api.trello.com/1/organizations/${organizationId}/boards?key=${clientId}&token=${token}&filter=open`;
-      console.log('Fetching boards from:', url);
-      
+
       const response = await fetch(url);
-      console.log('Boards response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -50,7 +49,6 @@ class BoardStore {
       }
 
       const trelloBoards = await response.json();
-      console.log('Fetched boards:', trelloBoards);
 
       this.boards = trelloBoards.map((board: any) => {
         const boardData = {
@@ -62,7 +60,6 @@ class BoardStore {
           url: board.url || '',
           prefs: board.prefs || {}
         };
-        console.log('Mapped board:', boardData);
         return boardData;
       });
 
@@ -76,6 +73,7 @@ class BoardStore {
           url: boardData.url,
           organizationId: boardData.organizationId
         });
+
         this.boardModels.set(boardData.id, boardModel);
       });
 
@@ -167,11 +165,23 @@ class BoardStore {
     }
   }
 
+  addBoardModel = (boardModel: BoardModel): void => {
+    this.boardModels.set(boardModel.id, boardModel);
+  }
+
+  hasBoard = (boardId: string): boolean => {
+    return this.boardModels.has(boardId);
+  }
+
   removeListFromBoard = (boardId: string, listId: string): void => {
     const board = this.boardModels.get(boardId);
     if (board) {
       board.removeListId(listId);
     }
+  }
+
+  setCurrentBoard = async (boardId: string) => {
+    this.currentBoardId = boardId;
   }
 
   updateBoardName = async (boardId: string, newName: string): Promise<boolean> => {

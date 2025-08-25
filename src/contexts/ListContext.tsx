@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useRef } from 'react';
 import ListStore from '../stores/list/ListStore';
+import { useBoards } from './BoardContext';
 
 const ListContext = createContext<ListStore | undefined>(undefined);
 
@@ -11,7 +12,7 @@ export const ListProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { token, clientId };
   };
 
-  // pass getAuthData into CardStore constructor
+  // pass getAuthData into ListStore constructor
   const listStoreRef = useRef(new ListStore(getAuthData));
 
   return (

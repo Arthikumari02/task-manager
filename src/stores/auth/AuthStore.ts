@@ -1,4 +1,4 @@
-import { makeAutoObservable, runInAction } from 'mobx';
+import { makeObservable, observable, computed, action } from 'mobx';
 
 interface UserInfo {
     id: string;
@@ -15,7 +15,22 @@ class AuthStore {
     isLoadingUserInfo: boolean = false;
 
     constructor() {
-        makeAutoObservable(this);
+        makeObservable(this, {
+            // Observable properties
+            token: observable,
+            clientId: observable,
+            userInfo: observable,
+            isLoadingUserInfo: observable,
+            
+            // Computed properties
+            isAuthenticated: computed,
+            
+            // Actions
+            login: action,
+            logout: action,
+            fetchUserInfo: action
+        });
+        
         this.clientId = process.env.REACT_APP_TRELLO_API_KEY || process.env.REACT_APP_TRELLO_CLIENT_ID || null;
         this.loadTokenFromStorage();
     }
@@ -66,9 +81,7 @@ class AuthStore {
                 username: userData.username
             };
 
-            runInAction(() => {
-                this.userInfo = userInfo;
-            });
+            this.userInfo = userInfo;
 
             // Store user info in localStorage for persistence
             localStorage.setItem('trello_userInfo', JSON.stringify(userInfo));
@@ -77,9 +90,7 @@ class AuthStore {
             // If fetch fails, try to load from localStorage
             this.loadUserInfoFromStorage();
         } finally {
-            runInAction(() => {
-                this.isLoadingUserInfo = false;
-            });
+            this.isLoadingUserInfo = false;
         }
     };
 

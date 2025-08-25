@@ -58,6 +58,17 @@ export class ListModel extends BaseModel {
     return Array.from(this.cardIds);
   }
 
+  // update card position in ListModel cardIdsSet 
+  updateCardPosition(cardId: string, newPos: number): void {
+    const cardIds = [...this.cardIdsList];
+    console.log("Before updating position", this.cardIdsList, cardId, newPos)
+    const [movedCardId] = cardIds.splice(cardIds.indexOf(cardId), 1);
+    cardIds.splice(newPos, 0, movedCardId); // Insert at the exact position, not newPos + 1
+    this.cardIds.clear();
+    this.cardIds = new Set(cardIds);
+    console.log("After updating position", this.cardIdsList, cardId, newPos)
+  }
+
   // List Operations
   async updateNameOnServer(newName: string, authData: { token: string; clientId: string }): Promise<boolean> {
     try {

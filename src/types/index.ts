@@ -62,6 +62,7 @@ export interface BoardContentProps {
 export interface BoardListProps {
   list: TrelloList;
   cards: TrelloCard[];
+  boardModel?: any; // Board model from BoardStore
   onTaskAdded: () => void;
   onRenameList: (listId: string, newName: string) => void;
   onTaskRename: (taskId: string, newName: string) => void;
@@ -103,6 +104,7 @@ export interface EmptyBoardStateProps {
 // Custom Hook Types
 export interface UseBoardDataReturn {
   boardName: string;
+  boardModel?: any; // Board model from BoardStore
   lists: any[]; // Using any[] to support both TrelloList and ListModel
   cards: TrelloCard[];
   isLoading: boolean;

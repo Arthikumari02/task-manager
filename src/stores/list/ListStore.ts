@@ -1,14 +1,42 @@
-import { makeAutoObservable, runInAction } from 'mobx';
+import { makeObservable, observable, computed, action } from 'mobx';
 import { ListModel } from '../../models';
 
 class ListStore {
-  private listsMap: Map<string, ListModel> = new Map();
+  listsMap = new Map<string, ListModel>();
   isLoading: boolean = false;
   error: string | null = null;
   isCreating: boolean = false;
 
   constructor(private getAuthData: () => { token: string | null; clientId: string | null }) {
-    makeAutoObservable(this);
+    makeObservable(this, {
+      // Observable properties
+      listsMap: observable,
+      isLoading: observable,
+      error: observable,
+      isCreating: observable,
+      lastFetchTimes: observable,
+      
+      // Computed properties
+      allLists: computed,
+      listCount: computed,
+      
+      // Actions
+      getListsForBoard: action,
+      getListsMap: action,
+      getListCountForBoard: action,
+      fetchLists: action,
+      createList: action,
+      updateList: action,
+      reorderLists: action,
+      getListById: action,
+      addList: action,
+      removeList: action,
+      addCardToList: action,
+      removeCardFromList: action,
+      closeList: action,
+      clearListsForBoard: action,
+      reset: action
+    });
   }
 
   // Computed values for better performance and clean code
@@ -38,21 +66,36 @@ class ListStore {
     return this.getListsForBoard(boardId).length;
   };
 
+  // Track last fetch time for each board to prevent duplicate fetches
+  lastFetchTimes = new Map<string, number>();
+  fetchDebounceMs: number = 2000; // 2 seconds debounce
+
   fetchLists = async (boardId: string, onSuccess: (lists: ListModel[]) => void): Promise<void> => {
     const { token, clientId } = this.getAuthData();
-    console.log('ListStore fetchLists called:', { boardId, token: !!token, clientId: !!clientId });
 
     if (!token || !clientId || !boardId) {
-      console.log('ListStore fetchLists: Missing auth data or boardId');
       return;
     }
 
+    // Check if we've fetched this board recently
+    const now = Date.now();
+    const lastFetch = this.lastFetchTimes.get(boardId) || 0;
+    if (now - lastFetch < this.fetchDebounceMs) {
+      // Return existing data instead of fetching again
+      const existingLists = this.getListsForBoard(boardId);
+      if (existingLists.length > 0) {
+        onSuccess(existingLists);
+        return;
+      }
+    }
+
+    // Update last fetch time
+    this.lastFetchTimes.set(boardId, now);
     this.isLoading = true;
     this.error = null;
 
     try {
       const url = `https://api.trello.com/1/boards/${boardId}/lists?key=${clientId}&token=${token}&filter=open`;
-      console.log('ListStore fetchLists: Making API call to:', url);
 
       const response = await fetch(url);
 
@@ -61,7 +104,6 @@ class ListStore {
       }
 
       const trelloLists = await response.json();
-      console.log('ListStore fetchLists: API response:', trelloLists);
 
       const listModels = trelloLists.map((list: any) => {
         const listModel = new ListModel({
@@ -86,7 +128,7 @@ class ListStore {
     }
   };
 
-  createList = async (boardId: string, name: string): Promise<ListModel | null> => {
+  createList = async (boardId: string, name: string, onSuccess?: (listModel: ListModel) => void): Promise<ListModel | null> => {
     const { token, clientId } = this.getAuthData();
     if (!token || !clientId || !boardId) return null;
 
@@ -124,6 +166,11 @@ class ListStore {
 
       this.listsMap.set(listToAdd.id, listToAdd);
 
+      // Notify callback if provided
+      if (onSuccess) {
+        onSuccess(listToAdd);
+      }
+
       return listToAdd;
 
     } catch (error) {
@@ -157,10 +204,8 @@ class ListStore {
     lists.splice(destinationIndex, 0, movedList);
 
     // Update local order: adjust pos hints immediately
-    runInAction(() => {
-      lists.forEach((list, idx) => {
-        list.pos = list.pos ?? 0;
-      });
+    lists.forEach((list, idx) => {
+      list.pos = list.pos ?? 0;
     });
 
     // Calculate new position for Trello API
@@ -200,12 +245,10 @@ class ListStore {
       const updatedList = await response.json();
 
       // Update the list's position with the actual value returned from Trello
-      runInAction(() => {
-        const target = this.listsMap.get(movedList.id);
-        if (target) {
-          target.pos = updatedList.pos;
-        }
-      });
+      const target = this.listsMap.get(movedList.id);
+      if (target) {
+        target.pos = updatedList.pos;
+      }
 
     } catch (error) {
       console.error('Error reordering lists:', error);
@@ -219,6 +262,7 @@ class ListStore {
   fetchBoardLists = this.fetchLists;
 
   getListById = (listId: string): ListModel | null => {
+
     return this.listsMap.get(listId) || null;
   };
 
@@ -231,7 +275,7 @@ class ListStore {
   }
 
   // Card relationship methods
-  addCardToList = (listId: string, cardId: string): void => {
+  addCardToList = (cardId: string, listId: string): void => {
     const list = this.listsMap.get(listId);
     if (list) {
       list.addCardId(cardId);
@@ -277,19 +321,19 @@ class ListStore {
   };
 
   clearListsForBoard = (boardId: string) => {
-    console.log('ListStore: Clearing lists for board:', boardId);
     const listsToRemove = Array.from(this.listsMap.values()).filter(list => list.boardId === boardId);
     listsToRemove.forEach(list => {
       this.listsMap.delete(list.id);
     });
-    console.log('ListStore: Cleared', listsToRemove.length, 'lists. Remaining:', this.listsMap.size);
   };
 
   reset = () => {
-    this.listsMap.clear();
+    //this.listsMap.clear();
     this.error = null;
     this.isLoading = false;
     this.isCreating = false;
+    // Clear last fetch times to ensure fresh data after login
+    this.lastFetchTimes.clear();
   };
 }
 

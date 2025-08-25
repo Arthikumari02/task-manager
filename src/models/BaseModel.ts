@@ -1,4 +1,4 @@
-import { makeObservable, observable, action, runInAction } from 'mobx';
+import { makeObservable, observable, action } from 'mobx';
 
 export abstract class BaseModel {
   id: string;
@@ -25,24 +25,18 @@ export abstract class BaseModel {
     const oldName = this.name;
     
     // Optimistic update
-    runInAction(() => {
-      this.setName(newName);
-    });
+    this.setName(newName);
 
     try {
       const success = await this.updateNameOnServer(newName, authData);
       if (!success) {
         // Revert on failure
-        runInAction(() => {
-          this.setName(oldName);
-        });
+        this.setName(oldName);
       }
       return success;
     } catch (error) {
       // Revert on error
-      runInAction(() => {
-        this.setName(oldName);
-      });
+      this.setName(oldName);
       console.error(`Error updating ${this.constructor.name} name:`, error);
       return false;
     }

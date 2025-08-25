@@ -1,7 +1,7 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
-import { useSearch } from '../contexts';
+import { useSearch } from '../contexts/SearchContext';
 import Loading from './Loading';
 
 const SearchResults: React.FC = observer(() => {
@@ -10,7 +10,6 @@ const SearchResults: React.FC = observer(() => {
 
   const handleTaskClick = (taskId: string, boardId: string) => {
     navigate(`/board/${boardId}`);
-    // You could also open the task modal here if needed
   };
 
   if (isSearching) {
@@ -53,7 +52,7 @@ const SearchResults: React.FC = observer(() => {
           Search Results ({searchCards.length})
         </h2>
       </div>
-      
+
       <div className="space-y-2">
         {searchCards.map((card) => (
           <div

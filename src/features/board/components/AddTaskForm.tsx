@@ -1,24 +1,54 @@
 import React, { useState } from 'react';
+import { observer } from 'mobx-react-lite';
 import { useCards, useLists } from '../../../contexts';
-import { AddTaskFormProps } from '../../../types';
 
-const AddTaskForm: React.FC<AddTaskFormProps> = ({ listId, boardId, onTaskAdded, onCancel }) => {
+interface AddTaskFormProps {
+  listId: string;
+  boardId: string;
+  onTaskAdded?: () => void;
+  onCancel: () => void;
+}
+
+const AddTaskForm: React.FC<AddTaskFormProps> = observer(({ listId, boardId, onTaskAdded, onCancel }) => {
   const { createCard, isCreating } = useCards();
   const { addCardToList } = useLists();
   const [taskTitle, setTaskTitle] = useState('');
-
-  const onSuccessCreateCard = (cardId: string) => {
-    addCardToList(cardId, listId);
-  };
 
   const handleAddTask = async () => {
     const title = taskTitle.trim();
     if (!title) return;
 
-    const newCard = await createCard(title, listId, onSuccessCreateCard);
-    if (newCard) {
+    try {
+      // Reset the form immediately for better UX
       setTaskTitle('');
-      onTaskAdded();
+
+      // Create the card using the store
+      const cardId = await createCard(title, listId, (newCardId) => {
+
+        // Update the list with the new card
+        addCardToList(newCardId, listId);
+
+        // Explicitly notify listeners that a card was added to this list
+      });
+
+      // Additional notification to ensure UI updates
+      if (cardId && typeof cardId === 'string') {
+        // Force a notification after a short delay to ensure UI updates
+        setTimeout(() => {
+          const cardStore = useCards();
+          cardStore.notifyCardUpdated(cardId, listId);
+        }, 100);
+      }
+
+      // Notify parent component that a task was added
+      if (onTaskAdded) {
+        onTaskAdded();
+      }
+
+      // Close the form
+      onCancel();
+    } catch (error) {
+      console.error('Error creating card:', error);
     }
   };
 
@@ -66,6 +96,6 @@ const AddTaskForm: React.FC<AddTaskFormProps> = ({ listId, boardId, onTaskAdded,
       </div>
     </div>
   );
-};
+});
 
 export default AddTaskForm;
