@@ -29,7 +29,6 @@ export class BoardModel extends BaseModel {
 
   // List ID Management Methods
   addListId(listId: string): void {
-    console.log("Adding list ID:", listId);
     this.listIds.add(listId);
   }
 

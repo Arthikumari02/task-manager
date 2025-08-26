@@ -15,11 +15,11 @@ class ListStore {
       error: observable,
       isCreating: observable,
       lastFetchTimes: observable,
-      
+
       // Computed properties
       allLists: computed,
       listCount: computed,
-      
+
       // Actions
       getListsForBoard: action,
       getListsMap: action,
@@ -156,7 +156,8 @@ class ListStore {
           },
           body: JSON.stringify({
             name,
-            idBoard: boardId
+            idBoard: boardId,
+            pos: 'bottom' // Add position parameter to place the list at the end
           })
         }
       );
@@ -332,9 +333,12 @@ class ListStore {
         throw new Error(`Failed to close list: ${response.statusText}`);
       }
 
-      // Remove the list from local state
+      // Mark the list as closed in local state instead of removing it
       runInAction(() => {
-        this.listsMap.delete(listId);
+        const list = this.listsMap.get(listId);
+        if (list) {
+          list.closed = true;
+        }
       });
       return true;
 

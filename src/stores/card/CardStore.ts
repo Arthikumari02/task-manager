@@ -153,10 +153,10 @@ class CardStore {
 
       // Process cards outside of runInAction to minimize transaction size
       const cardModelsToAdd: CardModel[] = [];
-      
+
       trelloCards.forEach((card: any) => {
         if (card.closed) return; // Skip closed cards
-        
+
         const cardModel = new CardModel({
           id: card.id,
           name: card.name,
@@ -167,10 +167,10 @@ class CardStore {
           boardId: boardId,
           url: card.url || ''
         });
-        
+
         cardModelsToAdd.push(cardModel);
       });
-      
+
       // Update observable state in a single action
       runInAction(() => {
         // Add all cards to the map
@@ -178,7 +178,7 @@ class CardStore {
           this.cardsMap.set(cardModel.id, cardModel);
         });
       });
-      
+
       onSuccessFetch(cardModelsToAdd);
     } catch (err) {
       console.error('Error fetching cards:', err);
@@ -274,7 +274,6 @@ class CardStore {
     const { token, clientId } = this.getAuthData();
     if (!token || !clientId) return;
 
-    console.log('Renaming card in CardStore:', { cardId, newName });
 
     // Get the card model from the map
     const cardModel = this.cardsMap.get(cardId);
@@ -312,7 +311,6 @@ class CardStore {
         throw new Error(`Failed to rename card: ${response.statusText}`);
       }
 
-      console.log('Card renamed successfully:', newName);
 
       // Notify again after successful API call
       this.notifyCardUpdated(cardId, listId);
@@ -393,7 +391,6 @@ class CardStore {
       this.cardsMap.delete(cardId);
 
       // Notify listeners that a card was deleted from this list
-      console.log(`Notifying card deletion for list ${listId}`);
       this.notifyCardUpdated(cardId, listId);
 
       return true;
@@ -438,7 +435,6 @@ class CardStore {
     const { token, clientId } = this.getAuthData();
     if (!token || !clientId) return;
 
-    console.log('Moving card in CardStore:', { cardId, sourceListId, destinationListId, position });
 
     // Store original state for potential revert
     const cardModel = this.cardsMap.get(cardId);
@@ -450,26 +446,21 @@ class CardStore {
     // const originalListId = cardModel.listId;
     // const originalPos = cardModel.pos;
 
-    // console.log(`Moving card "${cardModel.name}" from list ${sourceListId} to ${destinationListId}`);
 
     // // Calculate proper position value for Trello API
     // let newPosition: string | number;
 
     // const cardsInDestination = this.getCardsForList(boardId, destinationListId);
-    // console.log(`Destination list has ${cardsInDestination.length} cards`);
 
     // if (cardsInDestination.length === 0) {
     //   // If the list is empty, use 'top'
     //   newPosition = 'top';
-    //   console.log('Empty destination list, using position: top');
     // } else if (position === 0) {
     //   // If moving to the top of a non-empty list
     //   newPosition = 'top';
-    //   console.log('Moving to top of list, using position: top');
     // } else if (position >= cardsInDestination.length) {
     //   // If moving to the bottom of the list
     //   newPosition = 'bottom';
-    //   console.log('Moving to bottom of list, using position: bottom');
     // } else {
     //   // Calculate position between two cards
     //   const prevCard = cardsInDestination[position - 1];
@@ -478,11 +469,9 @@ class CardStore {
     //   if (prevCard && nextCard) {
     //     // Calculate midpoint between the two positions
     //     newPosition = (prevCard.pos + nextCard.pos) / 2;
-    //     console.log(`Calculated position between cards: ${newPosition}`);
     //   } else {
     //     // Fallback to index if calculation fails
     //     newPosition = position;
-    //     console.log(`Using fallback position: ${position}`);
     //   }
     //    }
 
@@ -521,13 +510,10 @@ class CardStore {
         this.cardsMap.set(cardId, cardModel);
 
         // Notify listeners for both source and destination lists
-        console.log(`Notifying card update for source list ${sourceListId}`);
         this.notifyCardUpdated(cardId, sourceListId);
 
-        console.log(`Notifying card update for destination list ${destinationListId}`);
         this.notifyCardUpdated(cardId, destinationListId);
       }
-      console.log('Card moved successfully, new position:', updatedCard.pos);
     } catch (error) {
       console.error('Error moving card:', error);
       // Revert on error
@@ -545,7 +531,6 @@ class CardStore {
     const listCards = this.getCardsForList(boardId, listId);
     if (listCards.length === 0 || sourceIndex === destinationIndex) return;
 
-    console.log('Reordering cards in list:', { boardId, listId, sourceIndex, destinationIndex });
 
     const [movedCard] = listCards.splice(sourceIndex, 1);
     listCards.splice(destinationIndex, 0, movedCard);
@@ -560,24 +545,19 @@ class CardStore {
 
 
     const originalPos = cardModel.pos;
-    console.log(`Reordering card "${cardModel.name}" from position ${sourceIndex} to ${destinationIndex}`);
     cardModel.pos = destinationIndex;
-    console.log("position here -------------", cardModel.pos)
     // Calculate proper position value for Trello API
     let newPosition: string | number;
 
     // Re-fetch cards after our local splice operations
     const updatedListCards = this.getCardsForList(boardId, listId);
-    console.log(`List has ${updatedListCards.length} cards after local reordering`);
 
     if (destinationIndex === 0) {
       // If moving to the top of the list
       newPosition = 'top';
-      console.log('Moving to top of list, using position: top');
     } else if (destinationIndex >= updatedListCards.length - 1) {
       // If moving to the bottom of the list
       newPosition = 'bottom';
-      console.log('Moving to bottom of list, using position: bottom');
     } else {
       // Calculate position between two cards
       const prevCard = updatedListCards[destinationIndex - 1];
@@ -586,15 +566,12 @@ class CardStore {
       if (prevCard && nextCard) {
         // Calculate midpoint between the two positions
         newPosition = (prevCard.pos + nextCard.pos) / 2;
-        console.log(`Calculated position between cards: ${newPosition}`);
       } else {
         // Fallback to index if calculation fails
         newPosition = destinationIndex;
-        console.log(`Using fallback position: ${destinationIndex}`);
       }
     }
 
-    console.log('Calculated new position for reorder:', newPosition);
 
     // Update local state immediately for better UX
     if (cardModel) {
@@ -631,10 +608,8 @@ class CardStore {
         this.cardsMap.set(movedCard.id, cardModel);
 
         // Notify listeners for this list that a card has been reordered
-        console.log(`Notifying card update for list ${listId} after reordering`);
         this.notifyCardUpdated(movedCard.id, listId);
       }
-      console.log('Card reordered successfully, new position:', updatedCard.pos);
     } catch (error) {
       console.error('Error reordering cards:', error);
       // Revert on error
@@ -658,10 +633,8 @@ class CardStore {
   registerCardUpdateListener = (listId: string, callback: () => void): void => {
     if (!this.cardUpdateListeners.has(listId)) {
       this.cardUpdateListeners.set(listId, new Set());
-      console.log(`[CardStore] Created new listener set for list ${listId}`);
     }
     this.cardUpdateListeners.get(listId)?.add(callback);
-    console.log(`[CardStore] Registered card update listener for list ${listId}. Total listeners: ${this.cardUpdateListeners.get(listId)?.size || 0}`);
   };
 
   // Unregister a listener for card updates in a specific list
@@ -670,10 +643,8 @@ class CardStore {
     if (listeners) {
       const hadCallback = listeners.has(callback);
       listeners.delete(callback);
-      console.log(`[CardStore] Unregistered card update listener for list ${listId}. Listener was ${hadCallback ? 'found' : 'not found'}. Remaining listeners: ${listeners.size}`);
       if (listeners.size === 0) {
         this.cardUpdateListeners.delete(listId);
-        console.log(`[CardStore] Removed empty listener set for list ${listId}`);
       }
     } else {
       console.log(`[CardStore] Attempted to unregister listener for list ${listId}, but no listeners found`);
@@ -682,12 +653,10 @@ class CardStore {
 
   // Notify all listeners that a card has been updated
   notifyCardUpdated = (cardId: string, listId: string): void => {
-    console.log(`Notifying card update for card ${cardId} in list ${listId}`);
 
     // Notify listeners for this specific list
     const listListeners = this.cardUpdateListeners.get(listId);
     if (listListeners) {
-      console.log(`Found ${listListeners.size} listeners for list ${listId}`);
       listListeners.forEach(callback => {
         try {
           callback();

@@ -109,6 +109,14 @@ const BoardContent: React.FC<BoardContentProps> = observer(({
 
   // Get lists and cards from stores
   const listIds = useMemo(() => boardModel?.allListIds || [], [boardModel?.allListIds]);
+  
+  // Force re-render when lists are updated
+  const [listsUpdateCounter, setListsUpdateCounter] = useState(0);
+
+  // Refresh lists when needed
+  const refreshLists = useCallback(() => {
+    setListsUpdateCounter(prev => prev + 1);
+  }, []);
 
   const getLists = useCallback(() => {
     // First get lists directly from the store
@@ -121,14 +129,14 @@ const BoardContent: React.FC<BoardContentProps> = observer(({
     const lists: ListModel[] = []
     listIds.forEach(listId => {
       const listModel = listStore.getListById(listId);
-      if (listModel) {
+      if (listModel && !listModel.closed) {
         lists.push(listModel);
       }
     });
     return lists;
-  }, [boardId, listIds]);
+  }, [boardId, listIds, listsUpdateCounter]); // Add listsUpdateCounter to dependencies
 
-  const lists = useMemo(() => getLists(), [boardId, listIds]);
+  const lists = useMemo(() => getLists(), [getLists]);
 
   // Create a refresh function to update data
   const refreshData = useCallback(() => {
@@ -137,6 +145,9 @@ const BoardContent: React.FC<BoardContentProps> = observer(({
     // Force re-fetch of lists and cards to ensure UI updates
     const lists = listStore.getListsForBoard(boardId);
     const cards = cardStore.getCardsForBoard(boardId);
+    
+    // Force lists to update
+    refreshLists();
 
     // Force a re-render by updating the component state
     setDataLoadedForBoard(prev => {

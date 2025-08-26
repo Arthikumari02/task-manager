@@ -16,7 +16,7 @@ interface BoardListProps {
 const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onTaskClick }) => {
   const { getListById, updateList } = useLists();
   const { getCardById, renameCard, isCreatingInList, registerCardUpdateListener, unregisterCardUpdateListener } = useCards();
-  
+
   // State to force re-render when cards are updated
   const [cardUpdateCounter, setCardUpdateCounter] = useState(0);
 
@@ -38,22 +38,19 @@ const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onT
       onTaskAdded();
     }
   }, [onTaskAdded]);
-  
+
   // Callback to increment the update counter when cards change
   const handleCardUpdate = useCallback(() => {
-    console.log(`Card update detected for list ${listId}`);
     // Force immediate re-render by updating the counter
     setCardUpdateCounter(prev => prev + 1);
   }, [listId]);
-  
+
   // Register and unregister card update listeners
   useEffect(() => {
     if (listId) {
-      console.log(`Registering card update listener for list ${listId}`);
       registerCardUpdateListener(listId, handleCardUpdate);
-      
+
       return () => {
-        console.log(`Unregistering card update listener for list ${listId}`);
         unregisterCardUpdateListener(listId, handleCardUpdate);
       };
     }
@@ -100,13 +97,19 @@ const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onT
     setShowContextMenu(false);
   }, []);
 
+  const { closeList } = useLists();
+
   const handleCloseList = useCallback(() => {
     // Archive list directly through store
-    if (listModel && typeof updateList === 'function') {
-      updateList(listModel.id, listModel.name);
-      // Note: In a real implementation, we would need to add archiving functionality
+    if (listModel && typeof closeList === 'function') {
+      closeList(listModel.id).then(success => {
+        if (success && onTaskAdded) {
+          // Use the same refresh mechanism as when a task is added
+          onTaskAdded();
+        }
+      });
     }
-  }, [listModel, updateList]);
+  }, [listModel, closeList, onTaskAdded]);
 
   const handleShowAddTaskForm = useCallback(() => {
     setShowAddTaskForm(true);
@@ -122,7 +125,6 @@ const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onT
 
   const handleTaskClick = useCallback((cardId: string) => {
     // Pass the card click event up to the parent component
-    console.log(`Card clicked: ${cardId}`);
     if (onTaskClick) {
       onTaskClick(cardId);
     }
@@ -133,7 +135,6 @@ const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onT
     if (!listModel?.cardIdsList) {
       return [];
     }
-    console.log(`BoardList: Getting cards for list ${listId}, found ${listModel.cardIdsList.length} card IDs`);
 
     const cards = listModel.cardIdsList
       .map(cardId => {
@@ -147,7 +148,6 @@ const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onT
       // Sort cards by position to ensure correct order after drag and drop
       .sort((a, b) => (a.pos || 0) - (b.pos || 0));
 
-    console.log(`BoardList: Returning ${cards.length} cards for list ${listId}`);
     return cards;
   }, [
     listModel?.cardIdsList,
