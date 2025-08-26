@@ -1,4 +1,4 @@
-import { makeObservable, observable, computed, action } from 'mobx';
+import { makeObservable, observable, computed, action, runInAction } from 'mobx';
 
 interface UserInfo {
     id: string;
@@ -61,7 +61,10 @@ class AuthStore {
     fetchUserInfo = async (): Promise<void> => {
         if (!this.token || !this.clientId) return;
 
-        this.isLoadingUserInfo = true;
+        runInAction(() => {
+            this.isLoadingUserInfo = true;
+        });
+        
         try {
             const response = await fetch(
                 `https://api.trello.com/1/members/me?key=${this.clientId}&token=${this.token}&fields=id,fullName,initials,email,username`
@@ -81,7 +84,9 @@ class AuthStore {
                 username: userData.username
             };
 
-            this.userInfo = userInfo;
+            runInAction(() => {
+                this.userInfo = userInfo;
+            });
 
             // Store user info in localStorage for persistence
             localStorage.setItem('trello_userInfo', JSON.stringify(userInfo));
@@ -90,11 +95,13 @@ class AuthStore {
             // If fetch fails, try to load from localStorage
             this.loadUserInfoFromStorage();
         } finally {
-            this.isLoadingUserInfo = false;
+            runInAction(() => {
+                this.isLoadingUserInfo = false;
+            });
         }
     };
 
-    private loadTokenFromStorage = () => {
+    private loadTokenFromStorage = action(() => {
         const storedToken = localStorage.getItem('trello_token');
         if (storedToken) {
             this.token = storedToken;
@@ -103,9 +110,9 @@ class AuthStore {
             // Then fetch fresh user info from API
             this.fetchUserInfo();
         }
-    };
+    });
 
-    private loadUserInfoFromStorage = () => {
+    private loadUserInfoFromStorage = action(() => {
         const storedUserInfo = localStorage.getItem('trello_userInfo');
         if (storedUserInfo) {
             try {
@@ -114,7 +121,7 @@ class AuthStore {
                 console.error('Error parsing stored user info:', error);
             }
         }
-    };
+    });
 }
 
 const authStore = new AuthStore();

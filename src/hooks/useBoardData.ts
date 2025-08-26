@@ -87,10 +87,8 @@ export const useBoardData = (boardId: string): UseBoardDataReturn => {
               const boardData = await response.json();
               addBoardModel(new BoardModel(boardData));
               setBoardName(boardData.name);
-              console.log('useBoardData: Fetched board name from API:', boardData.name);
             } else {
               setBoardName('Board');
-              console.log('useBoardData: Failed to fetch board, using default name');
             }
           } catch (error) {
             console.error('Error fetching board details:', error);

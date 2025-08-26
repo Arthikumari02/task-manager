@@ -23,7 +23,7 @@ export abstract class BaseModel {
 
   updateName = async (newName: string, authData: { token: string; clientId: string }): Promise<boolean> => {
     const oldName = this.name;
-    
+
     // Optimistic update
     this.setName(newName);
 

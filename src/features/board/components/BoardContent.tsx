@@ -241,7 +241,10 @@ const BoardContent: React.FC<BoardContentProps> = observer(({
         console.error('Card not found:', draggableId);
         return;
       }
+      // Update the card position in the CardStore
       cardModel.pos = destination.index;
+      // Make sure the change is reflected in the store
+      cardStore.cardsMap.set(draggableId, cardModel);
       console.log("After setting position", cardModel.pos)
       // Update ListStore first to maintain consistent state
       const sourceList = listStore.getListById(source.droppableId);

@@ -1,4 +1,4 @@
-import { makeAutoObservable } from 'mobx';
+import { makeAutoObservable, runInAction } from 'mobx';
 import { TrelloBoard } from '../../types';
 import { BoardModel } from '../../models';
 
@@ -34,8 +34,10 @@ class BoardStore {
       return;
     }
 
-    this.isLoading = true;
-    this.error = null;
+    runInAction(() => {
+      this.isLoading = true;
+      this.error = null;
+    });
 
     try {
       const url = `https://api.trello.com/1/organizations/${organizationId}/boards?key=${clientId}&token=${token}&filter=open`;
@@ -50,8 +52,8 @@ class BoardStore {
 
       const trelloBoards = await response.json();
 
-      this.boards = trelloBoards.map((board: any) => {
-        const boardData = {
+      const mappedBoards = trelloBoards.map((board: any) => {
+        return {
           id: board.id,
           name: board.name,
           desc: board.desc || '',
@@ -60,29 +62,37 @@ class BoardStore {
           url: board.url || '',
           prefs: board.prefs || {}
         };
-        return boardData;
       });
 
-      // Create BoardModel instances
-      this.boards.forEach(boardData => {
-        const boardModel = new BoardModel({
-          id: boardData.id,
-          name: boardData.name,
-          desc: boardData.desc,
-          closed: boardData.closed,
-          url: boardData.url,
-          organizationId: boardData.organizationId
-        });
+      runInAction(() => {
+        // Update boards array
+        this.boards = mappedBoards;
 
-        this.boardModels.set(boardData.id, boardModel);
+        // Create BoardModel instances
+        mappedBoards.forEach((boardData: TrelloBoard) => {
+          const boardModel = new BoardModel({
+            id: boardData.id,
+            name: boardData.name,
+            desc: boardData.desc,
+            closed: boardData.closed,
+            url: boardData.url,
+            organizationId: boardData.organizationId
+          });
+
+          this.boardModels.set(boardData.id, boardModel);
+        });
       });
 
     } catch (err) {
       console.error('Error fetching boards:', err);
-      this.error = err instanceof Error ? err.message : 'Failed to fetch boards';
-      this.boards = [];
+      runInAction(() => {
+        this.error = err instanceof Error ? err.message : 'Failed to fetch boards';
+        this.boards = [];
+      });
     } finally {
-      this.isLoading = false;
+      runInAction(() => {
+        this.isLoading = false;
+      });
     }
   };
 
@@ -90,8 +100,10 @@ class BoardStore {
     const { token, clientId } = this.getAuthData();
     if (!token || !clientId || !organizationId) return null;
 
-    this.isCreating = true;
-    this.error = null;
+    runInAction(() => {
+      this.isCreating = true;
+      this.error = null;
+    });
 
     try {
       const response = await fetch(
@@ -126,27 +138,33 @@ class BoardStore {
         prefs: newBoard.prefs || {}
       };
 
-      this.boards.push(boardToAdd);
+      runInAction(() => {
+        this.boards.push(boardToAdd);
 
-      // Create BoardModel instance
-      const boardModel = new BoardModel({
-        id: boardToAdd.id,
-        name: boardToAdd.name,
-        desc: boardToAdd.desc,
-        closed: boardToAdd.closed,
-        url: boardToAdd.url,
-        organizationId: boardToAdd.organizationId
+        // Create BoardModel instance
+        const boardModel = new BoardModel({
+          id: boardToAdd.id,
+          name: boardToAdd.name,
+          desc: boardToAdd.desc,
+          closed: boardToAdd.closed,
+          url: boardToAdd.url,
+          organizationId: boardToAdd.organizationId
+        });
+        this.boardModels.set(boardToAdd.id, boardModel);
       });
-      this.boardModels.set(boardToAdd.id, boardModel);
 
       return boardToAdd;
 
     } catch (error) {
       console.error('Error creating board:', error);
-      this.error = error instanceof Error ? error.message : 'Failed to create board';
+      runInAction(() => {
+        this.error = error instanceof Error ? error.message : 'Failed to create board';
+      });
       return null;
     } finally {
-      this.isCreating = false;
+      runInAction(() => {
+        this.isCreating = false;
+      });
     }
   };
 
@@ -181,7 +199,9 @@ class BoardStore {
   }
 
   setCurrentBoard = async (boardId: string) => {
-    this.currentBoardId = boardId;
+    runInAction(() => {
+      this.currentBoardId = boardId;
+    });
   }
 
   updateBoardName = async (boardId: string, newName: string): Promise<boolean> => {
@@ -206,32 +226,38 @@ class BoardStore {
 
       const updatedBoard = await response.json();
 
-      // Update local state
-      const boardIndex = this.boards.findIndex(board => board.id === boardId);
-      if (boardIndex !== -1) {
-        this.boards[boardIndex].name = updatedBoard.name;
-      }
+      runInAction(() => {
+        // Update local state
+        const boardIndex = this.boards.findIndex(board => board.id === boardId);
+        if (boardIndex !== -1) {
+          this.boards[boardIndex].name = updatedBoard.name;
+        }
 
-      const boardModel = this.boardModels.get(boardId);
-      if (boardModel) {
-        boardModel.name = updatedBoard.name;
-      }
+        const boardModel = this.boardModels.get(boardId);
+        if (boardModel) {
+          boardModel.name = updatedBoard.name;
+        }
+      });
 
       return true;
 
     } catch (error) {
       console.error('Error updating board name:', error);
-      this.error = error instanceof Error ? error.message : 'Failed to update board name';
+      runInAction(() => {
+        this.error = error instanceof Error ? error.message : 'Failed to update board name';
+      });
       return false;
     }
   };
 
   reset = () => {
-    this.boards = [];
-    this.boardModels.clear();
-    this.error = null;
-    this.isLoading = false;
-    this.isCreating = false;
+    runInAction(() => {
+      this.boards = [];
+      this.boardModels.clear();
+      this.error = null;
+      this.isLoading = false;
+      this.isCreating = false;
+    });
   };
 }
 

@@ -1,4 +1,4 @@
-import { action, makeObservable, observable, computed } from 'mobx';
+import { action, makeObservable, observable, computed, runInAction } from 'mobx';
 import { TrelloCard } from '../../types';
 import { CardModel } from '../../models';
 
@@ -120,7 +120,6 @@ class CardStore {
     const { token, clientId } = this.getAuthData();
     if (!token || !clientId || !boardId) return;
 
-
     // Check if we've fetched this board recently
     const now = Date.now();
     const lastFetch = this.lastFetchTimes.get(boardId) || 0;
@@ -134,10 +133,12 @@ class CardStore {
       }
     }
 
-    // Update last fetch time
-    this.lastFetchTimes.set(boardId, now);
-    this.isLoading = true;
-    this.error = null;
+    runInAction(() => {
+      // Update last fetch time
+      this.lastFetchTimes.set(boardId, now);
+      this.isLoading = true;
+      this.error = null;
+    });
 
     try {
       const response = await fetch(
@@ -150,8 +151,12 @@ class CardStore {
 
       const trelloCards = await response.json();
 
-      // Create CardModel instances and add to cardsMap
-      const cardModels = trelloCards.map((card: any) => {
+      // Process cards outside of runInAction to minimize transaction size
+      const cardModelsToAdd: CardModel[] = [];
+      
+      trelloCards.forEach((card: any) => {
+        if (card.closed) return; // Skip closed cards
+        
         const cardModel = new CardModel({
           id: card.id,
           name: card.name,
@@ -162,15 +167,28 @@ class CardStore {
           boardId: boardId,
           url: card.url || ''
         });
-        this.cardsMap.set(cardModel.id, cardModel);
-        return cardModel
-      }).filter((card: CardModel) => !card.closed);
-      onSuccessFetch(cardModels);
+        
+        cardModelsToAdd.push(cardModel);
+      });
+      
+      // Update observable state in a single action
+      runInAction(() => {
+        // Add all cards to the map
+        cardModelsToAdd.forEach(cardModel => {
+          this.cardsMap.set(cardModel.id, cardModel);
+        });
+      });
+      
+      onSuccessFetch(cardModelsToAdd);
     } catch (err) {
       console.error('Error fetching cards:', err);
-      this.error = err instanceof Error ? err.message : 'Failed to fetch cards';
+      runInAction(() => {
+        this.error = err instanceof Error ? err.message : 'Failed to fetch cards';
+      });
     } finally {
-      this.isLoading = false;
+      runInAction(() => {
+        this.isLoading = false;
+      });
     }
   };
 
@@ -178,9 +196,11 @@ class CardStore {
     const { token, clientId } = this.getAuthData();
     if (!token || !clientId || !listId) return null;
 
-    this.isCreating = true;
-    this.creatingListIds.add(listId); // Track which list is creating a card
-    this.error = null;
+    runInAction(() => {
+      this.isCreating = true;
+      this.creatingListIds.add(listId); // Track which list is creating a card
+      this.error = null;
+    });
 
     try {
       const response = await fetch(
@@ -226,9 +246,11 @@ class CardStore {
         url: cardToAdd.url
       });
 
-      this.cardsMap.set(cardModel.id, cardModel);
-      this.isCreating = false;
-      this.creatingListIds.delete(listId); // Remove list from creating state
+      runInAction(() => {
+        this.cardsMap.set(cardModel.id, cardModel);
+        this.isCreating = false;
+        this.creatingListIds.delete(listId); // Remove list from creating state
+      });
 
       // Notify listeners that a card was added to this list
       this.notifyCardUpdated(cardToAdd.id, listId);
@@ -239,9 +261,11 @@ class CardStore {
 
     } catch (error) {
       console.error('Error creating card:', error);
-      this.error = error instanceof Error ? error.message : 'Failed to create card';
-      this.isCreating = false;
-      this.creatingListIds.delete(listId); // Remove list from creating state on error
+      runInAction(() => {
+        this.error = error instanceof Error ? error.message : 'Failed to create card';
+        this.isCreating = false;
+        this.creatingListIds.delete(listId); // Remove list from creating state on error
+      });
       return null;
     }
   };
@@ -677,14 +701,16 @@ class CardStore {
   };
 
   reset = () => {
-    this.cardsMap.clear();
-    this.error = null;
-    this.isLoading = false;
-    this.isCreating = false;
-    this.creatingListIds.clear(); // Clear creating list IDs
-    this.cardUpdateListeners.clear(); // Clear all listeners
-    // Clear last fetch times to ensure fresh data after login
-    this.lastFetchTimes.clear();
+    runInAction(() => {
+      this.cardsMap.clear();
+      this.error = null;
+      this.isLoading = false;
+      this.isCreating = false;
+      this.creatingListIds.clear(); // Clear creating list IDs
+      this.cardUpdateListeners.clear(); // Clear all listeners
+      // Clear last fetch times to ensure fresh data after login
+      this.lastFetchTimes.clear();
+    });
   };
 }
 

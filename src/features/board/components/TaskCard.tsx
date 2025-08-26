@@ -30,7 +30,6 @@ const TaskCard: React.FC<TaskCardProps> = ({ id, name, desc, index, onTaskRename
     setIsEditing(false);
     const trimmedName = taskName.trim();
     if (trimmedName && trimmedName !== name) {
-      console.log(`TaskCard: Renaming task ${id} from "${name}" to "${trimmedName}"`);
       onTaskRename(id, trimmedName);
       // Don't reset to prop value after rename to avoid UI flicker
       // The component will re-render with new props when MobX updates

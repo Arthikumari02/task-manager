@@ -1,6 +1,6 @@
 import { Droppable } from '@hello-pangea/dnd';
 import { observer } from 'mobx-react-lite';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useCards, useLists } from '../../../contexts';
 import { CardModel } from '../../../models';
 import AddTaskForm from './AddTaskForm';
@@ -15,7 +15,10 @@ interface BoardListProps {
 
 const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onTaskClick }) => {
   const { getListById, updateList } = useLists();
-  const { getCardById, renameCard, isCreatingInList } = useCards();
+  const { getCardById, renameCard, isCreatingInList, registerCardUpdateListener, unregisterCardUpdateListener } = useCards();
+  
+  // State to force re-render when cards are updated
+  const [cardUpdateCounter, setCardUpdateCounter] = useState(0);
 
   // Get models directly from stores
   const listModel = getListById(listId);
@@ -28,11 +31,33 @@ const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onT
 
   const handleTaskAdded = useCallback(() => {
     setShowAddTaskForm(false);
+    // Force a re-render by incrementing the counter
+    setCardUpdateCounter(prev => prev + 1);
     // Call the parent's onTaskAdded to refresh the data if provided
     if (onTaskAdded) {
       onTaskAdded();
     }
   }, [onTaskAdded]);
+  
+  // Callback to increment the update counter when cards change
+  const handleCardUpdate = useCallback(() => {
+    console.log(`Card update detected for list ${listId}`);
+    // Force immediate re-render by updating the counter
+    setCardUpdateCounter(prev => prev + 1);
+  }, [listId]);
+  
+  // Register and unregister card update listeners
+  useEffect(() => {
+    if (listId) {
+      console.log(`Registering card update listener for list ${listId}`);
+      registerCardUpdateListener(listId, handleCardUpdate);
+      
+      return () => {
+        console.log(`Unregistering card update listener for list ${listId}`);
+        unregisterCardUpdateListener(listId, handleCardUpdate);
+      };
+    }
+  }, [listId, registerCardUpdateListener, unregisterCardUpdateListener, handleCardUpdate]);
 
   const handleCancelAddTask = useCallback(() => {
     setShowAddTaskForm(false);
@@ -108,26 +133,29 @@ const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onT
     if (!listModel?.cardIdsList) {
       return [];
     }
-    console.log("listModel?.cardIdsList", listModel?.cardIdsList)
+    console.log(`BoardList: Getting cards for list ${listId}, found ${listModel.cardIdsList.length} card IDs`);
 
     const cards = listModel.cardIdsList
       .map(cardId => {
         const card = getCardById(cardId);
         if (!card) {
+          console.log(`BoardList: Card ${cardId} not found in CardStore for list ${listId}`);
         }
         return card;
       })
-      .filter((card): card is CardModel => card !== undefined && card !== null);
+      .filter((card): card is CardModel => card !== undefined && card !== null)
+      // Sort cards by position to ensure correct order after drag and drop
+      .sort((a, b) => (a.pos || 0) - (b.pos || 0));
 
+    console.log(`BoardList: Returning ${cards.length} cards for list ${listId}`);
     return cards;
   }, [
     listModel?.cardIdsList,
     getCardById,
     listId,
-    // Add these dependencies to ensure reactivity when cards change
-    ...((listModel?.cardIdsList || []).map(cardId => getCardById(cardId)?.name)),
-    ...((listModel?.cardIdsList || []).map(cardId => getCardById(cardId)?.desc)),
-    ...((listModel?.cardIdsList || []).map(cardId => getCardById(cardId)?.pos))
+    cardUpdateCounter, // Add cardUpdateCounter to dependencies to force re-render on card updates
+    // We don't need to add individual card properties as dependencies
+    // The cardUpdateCounter will handle forcing re-renders when cards change
   ]);
 
   // If listModel is null, render a placeholder

@@ -71,8 +71,8 @@ class OrganizationStore {
       return;
     }
 
-    this.isLoading = true;
-    this.error = null;
+    this.setLoading(true);
+    this.setError(null);
     const previousCurrentOrg = this.currentOrganization; // Save the current org before fetching
 
     try {
@@ -99,28 +99,18 @@ class OrganizationStore {
         return orgData;
       });
 
+      // Update organizations in an action
+      this.updateOrganizations(mappedOrgs);
+
       // Create OrganizationModel instances
-      this.organizations.forEach(orgData => {
-        const orgModel = new OrganizationModel({
-          id: orgData.id,
-          name: orgData.name,
-          displayName: orgData.displayName,
-          desc: orgData.desc,
-          url: orgData.url
-        });
-        this.organizationModels.set(orgData.id, orgModel);
-      });
+      this.updateOrganizationModels(mappedOrgs);
 
       // Set first organization as default if none selected, or restore the previous one if it exists
       if (this.organizations.length > 0) {
         if (previousCurrentOrg) {
           // Try to find the previous current org in the new list
           const existingOrg = this.organizations.find((org: TrelloOrganization) => org.id === previousCurrentOrg.id);
-          this.currentOrganization = existingOrg || this.organizations[0];
-          // Save the current organization to localStorage
-          if (this.currentOrganization) {
-            localStorage.setItem('current_organization', JSON.stringify(this.currentOrganization));
-          }
+          this.setCurrentOrganization(existingOrg || this.organizations[0]);
         } else {
           // Try to load from localStorage first
           const savedOrg = this.loadSavedOrganization();
@@ -131,22 +121,44 @@ class OrganizationStore {
           } else {
             this.setCurrentOrganization(this.organizations[0]);
           }
-          // Save the current organization to localStorage
-          if (this.currentOrganization) {
-            localStorage.setItem('current_organization', JSON.stringify(this.currentOrganization));
-          }
         }
       }
 
     } catch (err) {
       console.error('Error fetching organizations:', err);
-      this.error = err instanceof Error ? err.message : 'Failed to fetch organizations';
-      this.organizations = [];
-      this.setCurrentOrganization(this.organizations[0]);
+      this.setError(err instanceof Error ? err.message : 'Failed to fetch organizations');
+      this.updateOrganizations([]);
+      this.setCurrentOrganization(null);
     } finally {
-      this.isLoading = false;
+      this.setLoading(false);
     }
   };
+  
+  // Helper actions for updating observable state
+  setLoading = action((value: boolean) => {
+    this.isLoading = value;
+  });
+  
+  setError = action((value: string | null) => {
+    this.error = value;
+  });
+  
+  updateOrganizations = action((orgs: TrelloOrganization[]) => {
+    this.organizations = orgs;
+  });
+  
+  updateOrganizationModels = action((orgs: TrelloOrganization[]) => {
+    orgs.forEach(orgData => {
+      const orgModel = new OrganizationModel({
+        id: orgData.id,
+        name: orgData.name,
+        displayName: orgData.displayName,
+        desc: orgData.desc,
+        url: orgData.url
+      });
+      this.organizationModels.set(orgData.id, orgModel);
+    });
+  });
 
   // OrganizationModel access methods
   getOrganizationById = (orgId: string): OrganizationModel | undefined => {
@@ -171,8 +183,8 @@ class OrganizationStore {
     const { token, clientId } = this.getAuthData();
     if (!token || !clientId) return null;
 
-    this.isCreating = true;
-    this.error = null;
+    this.setCreating(true);
+    this.setError(null);
 
     try {
       const response = await fetch(
@@ -202,18 +214,11 @@ class OrganizationStore {
         url: newOrg.url || ''
       };
 
-      // Create a new array to maintain immutability
-      this.organizations = [...this.organizations, orgToAdd];
+      // Add the new organization to the existing ones
+      this.addOrganization(orgToAdd);
 
       // Create OrganizationModel instance
-      const orgModel = new OrganizationModel({
-        id: orgToAdd.id,
-        name: orgToAdd.name,
-        displayName: orgToAdd.displayName,
-        desc: orgToAdd.desc,
-        url: orgToAdd.url
-      });
-      this.organizationModels.set(orgToAdd.id, orgModel);
+      this.addOrganizationModel(orgToAdd);
 
       // Set as current organization
       this.setCurrentOrganization(orgToAdd);
@@ -222,12 +227,31 @@ class OrganizationStore {
 
     } catch (error) {
       console.error('Error creating organization:', error);
-      this.error = error instanceof Error ? error.message : 'Failed to create organization';
+      this.setError(error instanceof Error ? error.message : 'Failed to create organization');
       return null;
     } finally {
-      this.isCreating = false;
+      this.setCreating(false);
     }
   };
+  
+  setCreating = action((value: boolean) => {
+    this.isCreating = value;
+  });
+  
+  addOrganization = action((org: TrelloOrganization) => {
+    this.organizations = [...this.organizations, org];
+  });
+  
+  addOrganizationModel = action((org: TrelloOrganization) => {
+    const orgModel = new OrganizationModel({
+      id: org.id,
+      name: org.name,
+      displayName: org.displayName,
+      desc: org.desc,
+      url: org.url
+    });
+    this.organizationModels.set(org.id, orgModel);
+  });
 
   reset = () => {
     this.organizations = [];
@@ -249,7 +273,7 @@ class OrganizationStore {
         const parsedOrg = JSON.parse(savedOrg) as TrelloOrganization;
         // Only set if we don't already have a current organization
         if (!this.currentOrganization) {
-          this.currentOrganization = parsedOrg;
+          this.setCurrentOrganizationInternal(parsedOrg);
         }
         return parsedOrg;
       }
@@ -259,6 +283,11 @@ class OrganizationStore {
     }
     return null;
   };
+  
+  // Internal action to set current organization without the switching flag logic
+  setCurrentOrganizationInternal = action((organization: TrelloOrganization | null) => {
+    this.currentOrganization = organization;
+  });
 }
 
 export default OrganizationStore;

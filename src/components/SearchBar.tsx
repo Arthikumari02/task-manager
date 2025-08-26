@@ -160,7 +160,7 @@ const SearchBar: React.FC<SearchBarProps> = observer(({
 
               {/* Mobile Search Results */}
               {showSearchResults && (searchQuery.trim() || hasResults) && (
-                <div className="fixed inset-0 top-0 z-40 bg-white md:hidden">
+                <div className="fixed inset-0 top-0 z-[100] bg-white md:hidden">
                   <div className="pt-20 px-4 pb-4 h-full overflow-y-auto">
                     <SearchResults />
                   </div>
@@ -211,7 +211,7 @@ const SearchBar: React.FC<SearchBarProps> = observer(({
 
       {/* Search Results Dropdown */}
       {showSearchResults && (searchQuery.trim() || hasResults) && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-96 overflow-y-auto z-50 w-64 sm:w-80">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-96 overflow-y-auto z-[100] w-64 sm:w-80">
           <SearchResults />
         </div>
       )}

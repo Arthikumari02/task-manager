@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { useCards, useLists } from '../../../contexts';
+import { useCards, useLists, useBoards } from '../../../contexts';
 
 interface AddTaskFormProps {
   listId: string;
@@ -10,8 +10,10 @@ interface AddTaskFormProps {
 }
 
 const AddTaskForm: React.FC<AddTaskFormProps> = observer(({ listId, boardId, onTaskAdded, onCancel }) => {
-  const { createCard, isCreating } = useCards();
-  const { addCardToList } = useLists();
+  const cardStore = useCards();
+  const { createCard, isCreating, notifyCardUpdated } = cardStore;
+  const { addCardToList, getListById } = useLists();
+  const { getBoardById } = useBoards();
   const [taskTitle, setTaskTitle] = useState('');
 
   const handleAddTask = async () => {
@@ -21,32 +23,48 @@ const AddTaskForm: React.FC<AddTaskFormProps> = observer(({ listId, boardId, onT
     try {
       // Reset the form immediately for better UX
       setTaskTitle('');
-
+      
       // Create the card using the store
-      const cardId = await createCard(title, listId, (newCardId) => {
-
-        // Update the list with the new card
+      const newCard = await createCard(title, listId, (newCardId) => {
+        // Get the list model and add the card ID directly
+        const listModel = getListById(listId);
+        if (listModel) {
+          // Add card ID to the list model
+          listModel.addCardId(newCardId);
+          
+          // Also ensure the board knows about this list
+          const boardModel = getBoardById(boardId);
+          if (boardModel && !boardModel.hasListId(listId)) {
+            boardModel.addListId(listId);
+          }
+        }
+        
+        // Update the list with the new card (this updates the store's internal mapping)
         addCardToList(newCardId, listId);
-
-        // Explicitly notify listeners that a card was added to this list
+        
+        // Immediately notify listeners that a card was added to this list
+        notifyCardUpdated(newCardId, listId);
+        
+        // Notify parent component that a task was added
+        if (onTaskAdded) {
+          onTaskAdded();
+        }
+        
+        // Close the form
+        onCancel();
       });
-
-      // Additional notification to ensure UI updates
-      if (cardId && typeof cardId === 'string') {
-        // Force a notification after a short delay to ensure UI updates
-        setTimeout(() => {
-          const cardStore = useCards();
-          cardStore.notifyCardUpdated(cardId, listId);
-        }, 100);
+      
+      // Force an immediate notification after the card is created
+      // This ensures the UI updates even if the callback hasn't run yet
+      if (newCard && newCard.id) {
+        // Get the list model and add the card ID directly to ensure immediate UI update
+        const listModel = getListById(listId);
+        if (listModel) {
+          listModel.addCardId(newCard.id);
+        }
+        
+        notifyCardUpdated(newCard.id, listId);
       }
-
-      // Notify parent component that a task was added
-      if (onTaskAdded) {
-        onTaskAdded();
-      }
-
-      // Close the form
-      onCancel();
     } catch (error) {
       console.error('Error creating card:', error);
     }

@@ -99,9 +99,9 @@ const BoardDropdown: React.FC<BoardDropdownProps> = observer(({
                 <div className="px-2 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100">
                   RECENT BOARDS
                 </div>
-                <div className="py-2 max-h-64 overflow-y-auto">
+                <div className={`py-2 ${currentOrganizationBoards.length > 4 ? 'max-h-64 overflow-y-auto scrollbar-hide' : ''}`}>
                   {currentOrganizationBoards.length > 0 ? (
-                    currentOrganizationBoards.slice(0, 10).map((board) => (
+                    currentOrganizationBoards.map((board) => (
                       <button
                         key={board.id}
                         onClick={() => handleBoardSelect(board.id)}
@@ -154,15 +154,15 @@ const BoardDropdown: React.FC<BoardDropdownProps> = observer(({
 
       {/* Desktop dropdown */}
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50" onClick={e => e.stopPropagation()}>
+        <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50 overflow-hidden" onClick={e => e.stopPropagation()}>
           <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100">
             RECENT BOARDS
           </div>
-          <div className="py-1">
+          <div className={`py-1 ${currentOrganizationBoards.length > 4 ? 'max-h-48 overflow-y-auto scrollbar-hide' : ''}`}>
             {isLoadingBoards ? (
               <div className="px-4 py-2 text-sm text-gray-500">Loading boards...</div>
             ) : currentOrganizationBoards.length > 0 ? (
-              currentOrganizationBoards.slice(0, 5).map((board) => (
+              currentOrganizationBoards.map((board) => (
                 <button
                   key={board.id}
                   onClick={() => handleBoardSelect(board.id)}

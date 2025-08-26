@@ -1,4 +1,4 @@
-import { makeAutoObservable } from 'mobx';
+import { makeAutoObservable, runInAction } from 'mobx';
 import { TrelloCard } from '../../types';
 
 interface SearchResult {
@@ -21,16 +21,20 @@ class SearchStore {
   performSearch = async (query: string): Promise<void> => {
     const { token, clientId } = this.getAuthData();
     if (!token || !clientId || !query.trim()) {
-      this.searchResults = {
-        cards: [],
-        isLoading: false,
-        error: null
-      };
+      runInAction(() => {
+        this.searchResults = {
+          cards: [],
+          isLoading: false,
+          error: null
+        };
+      });
       return;
     }
 
-    this.searchResults.isLoading = true;
-    this.searchResults.error = null;
+    runInAction(() => {
+      this.searchResults.isLoading = true;
+      this.searchResults.error = null;
+    });
 
     try {
       const response = await fetch(
@@ -57,28 +61,34 @@ class SearchStore {
           url: card.url || ''
         }));
 
-      this.searchResults = {
-        cards,
-        isLoading: false,
-        error: null
-      };
+      runInAction(() => {
+        this.searchResults = {
+          cards,
+          isLoading: false,
+          error: null
+        };
+      });
 
     } catch (error) {
       console.error('Error searching cards:', error);
-      this.searchResults = {
-        cards: [],
-        isLoading: false,
-        error: error instanceof Error ? error.message : 'Failed to search cards'
-      };
+      runInAction(() => {
+        this.searchResults = {
+          cards: [],
+          isLoading: false,
+          error: error instanceof Error ? error.message : 'Failed to search cards'
+        };
+      });
     }
   };
 
   clearSearch = () => {
-    this.searchResults = {
-      cards: [],
-      isLoading: false,
-      error: null
-    };
+    runInAction(() => {
+      this.searchResults = {
+        cards: [],
+        isLoading: false,
+        error: null
+      };
+    });
   };
 
   get hasResults(): boolean {

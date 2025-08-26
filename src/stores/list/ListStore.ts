@@ -1,4 +1,4 @@
-import { makeObservable, observable, computed, action } from 'mobx';
+import { makeObservable, observable, computed, action, runInAction } from 'mobx';
 import { ListModel } from '../../models';
 
 class ListStore {
@@ -89,10 +89,12 @@ class ListStore {
       }
     }
 
-    // Update last fetch time
-    this.lastFetchTimes.set(boardId, now);
-    this.isLoading = true;
-    this.error = null;
+    runInAction(() => {
+      // Update last fetch time
+      this.lastFetchTimes.set(boardId, now);
+      this.isLoading = true;
+      this.error = null;
+    });
 
     try {
       const url = `https://api.trello.com/1/boards/${boardId}/lists?key=${clientId}&token=${token}&filter=open`;
@@ -104,27 +106,34 @@ class ListStore {
       }
 
       const trelloLists = await response.json();
+      const listModelsToAdd: ListModel[] = [];
 
-      const listModels = trelloLists.map((list: any) => {
-        const listModel = new ListModel({
-          id: list.id,
-          name: list.name,
-          boardId: boardId,
-          closed: list.closed || false,
-          pos: list.pos || 0
+      runInAction(() => {
+        trelloLists.forEach((list: any) => {
+          const listModel = new ListModel({
+            id: list.id,
+            name: list.name,
+            boardId: boardId,
+            closed: list.closed || false,
+            pos: list.pos || 0
+          });
+
+          this.listsMap.set(listModel.id, listModel);
+          listModelsToAdd.push(listModel);
         });
-
-        this.listsMap.set(listModel.id, listModel);
-        return listModel;
       });
 
-      onSuccess(listModels);
+      onSuccess(listModelsToAdd);
 
     } catch (err) {
       console.error('Error fetching lists:', err);
-      this.error = err instanceof Error ? err.message : 'Failed to fetch lists';
+      runInAction(() => {
+        this.error = err instanceof Error ? err.message : 'Failed to fetch lists';
+      });
     } finally {
-      this.isLoading = false;
+      runInAction(() => {
+        this.isLoading = false;
+      });
     }
   };
 
@@ -132,8 +141,10 @@ class ListStore {
     const { token, clientId } = this.getAuthData();
     if (!token || !clientId || !boardId) return null;
 
-    this.isCreating = true;
-    this.error = null;
+    runInAction(() => {
+      this.isCreating = true;
+      this.error = null;
+    });
 
     try {
       const response = await fetch(
@@ -164,7 +175,9 @@ class ListStore {
         pos: newList.pos || 0
       });
 
-      this.listsMap.set(listToAdd.id, listToAdd);
+      runInAction(() => {
+        this.listsMap.set(listToAdd.id, listToAdd);
+      });
 
       // Notify callback if provided
       if (onSuccess) {
@@ -175,10 +188,14 @@ class ListStore {
 
     } catch (error) {
       console.error('Error creating list:', error);
-      this.error = error instanceof Error ? error.message : 'Failed to create list';
+      runInAction(() => {
+        this.error = error instanceof Error ? error.message : 'Failed to create list';
+      });
       return null;
     } finally {
-      this.isCreating = false;
+      runInAction(() => {
+        this.isCreating = false;
+      });
     }
   };
 
@@ -204,8 +221,10 @@ class ListStore {
     lists.splice(destinationIndex, 0, movedList);
 
     // Update local order: adjust pos hints immediately
-    lists.forEach((list, idx) => {
-      list.pos = list.pos ?? 0;
+    runInAction(() => {
+      lists.forEach((list, idx) => {
+        list.pos = list.pos ?? 0;
+      });
     });
 
     // Calculate new position for Trello API
@@ -245,14 +264,18 @@ class ListStore {
       const updatedList = await response.json();
 
       // Update the list's position with the actual value returned from Trello
-      const target = this.listsMap.get(movedList.id);
-      if (target) {
-        target.pos = updatedList.pos;
-      }
+      runInAction(() => {
+        const target = this.listsMap.get(movedList.id);
+        if (target) {
+          target.pos = updatedList.pos;
+        }
+      });
 
     } catch (error) {
       console.error('Error reordering lists:', error);
-      this.error = error instanceof Error ? error.message : 'Failed to reorder lists';
+      runInAction(() => {
+        this.error = error instanceof Error ? error.message : 'Failed to reorder lists';
+      });
       // Re-fetch to restore
       await this.fetchLists(boardId, () => { });
     }
@@ -310,30 +333,38 @@ class ListStore {
       }
 
       // Remove the list from local state
-      this.listsMap.delete(listId);
+      runInAction(() => {
+        this.listsMap.delete(listId);
+      });
       return true;
 
     } catch (error) {
       console.error('Error closing list:', error);
-      this.error = error instanceof Error ? error.message : 'Failed to close list';
+      runInAction(() => {
+        this.error = error instanceof Error ? error.message : 'Failed to close list';
+      });
       return false;
     }
   };
 
   clearListsForBoard = (boardId: string) => {
     const listsToRemove = Array.from(this.listsMap.values()).filter(list => list.boardId === boardId);
-    listsToRemove.forEach(list => {
-      this.listsMap.delete(list.id);
+    runInAction(() => {
+      listsToRemove.forEach(list => {
+        this.listsMap.delete(list.id);
+      });
     });
   };
 
   reset = () => {
-    //this.listsMap.clear();
-    this.error = null;
-    this.isLoading = false;
-    this.isCreating = false;
-    // Clear last fetch times to ensure fresh data after login
-    this.lastFetchTimes.clear();
+    runInAction(() => {
+      //this.listsMap.clear();
+      this.error = null;
+      this.isLoading = false;
+      this.isCreating = false;
+      // Clear last fetch times to ensure fresh data after login
+      this.lastFetchTimes.clear();
+    });
   };
 }
 

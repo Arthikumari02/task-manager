@@ -1,4 +1,4 @@
-import { action, computed, makeObservable, observable } from 'mobx';
+import { action, computed, makeAutoObservable } from 'mobx';
 import { BaseModel } from './BaseModel';
 
 export class ListModel extends BaseModel {
@@ -19,27 +19,27 @@ export class ListModel extends BaseModel {
     this.closed = data.closed;
     this.pos = data.pos;
 
-    // Automatically makes fields observable and methods actions
-    makeObservable(this, {
-      boardId: observable,
-      closed: observable,
-      pos: observable,
-      addCardId: action,
-      removeCardId: action,
-      hasCardId: action,
-      getCardIds: action,
-      getCardCount: action,
-      cardIdsList: computed
-    });
+    // We don't call makeObservable here since it's already called in the parent class
+    // and we can't mix decorator syntax with manual annotations
   }
 
   // Card ID Management Methods
   addCardId(cardId: string): void {
-    this.cardIds.add(cardId);
+    // Create a new Set to trigger MobX reactivity
+    const newSet = new Set(this.cardIds);
+    newSet.add(cardId);
+    this.cardIds = newSet;
   }
 
   removeCardId(cardId: string): boolean {
-    return this.cardIds.delete(cardId);
+    if (this.cardIds.has(cardId)) {
+      // Create a new Set to trigger MobX reactivity
+      const newSet = new Set(this.cardIds);
+      newSet.delete(cardId);
+      this.cardIds = newSet;
+      return true;
+    }
+    return false;
   }
 
   hasCardId(cardId: string): boolean {
@@ -61,12 +61,11 @@ export class ListModel extends BaseModel {
   // update card position in ListModel cardIdsSet 
   updateCardPosition(cardId: string, newPos: number): void {
     const cardIds = [...this.cardIdsList];
-    console.log("Before updating position", this.cardIdsList, cardId, newPos)
     const [movedCardId] = cardIds.splice(cardIds.indexOf(cardId), 1);
     cardIds.splice(newPos, 0, movedCardId); // Insert at the exact position, not newPos + 1
-    this.cardIds.clear();
+
+    // Create a new Set to trigger MobX reactivity
     this.cardIds = new Set(cardIds);
-    console.log("After updating position", this.cardIdsList, cardId, newPos)
   }
 
   // List Operations
