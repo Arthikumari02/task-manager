@@ -4,7 +4,7 @@ import BoardStore from '../stores/board/BoardStore';
 
 const BoardContext = createContext<BoardStore | undefined>(undefined);
 
-export const BoardProvider: React.FC<{ children: React.ReactNode }> = observer(({ children }) => {
+export const BoardsStoreProvider: React.FC<{ children: React.ReactNode }> = observer(({ children }) => {
   const getAuthData = () => {
     const token = localStorage.getItem('trello_token');
     const clientId = localStorage.getItem('trello_clientId');
@@ -21,10 +21,10 @@ export const BoardProvider: React.FC<{ children: React.ReactNode }> = observer((
   );
 });
 
-export const useBoards = (): BoardStore => {
+export const useBoardsStore = (): BoardStore => {
   const context = useContext(BoardContext);
   if (context === undefined) {
-    throw new Error('useBoards must be used within a BoardProvider');
+    throw new Error('useBoardsStore must be used within a BoardProvider');
   }
   return context;
 };

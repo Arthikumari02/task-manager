@@ -4,7 +4,7 @@ import CardStore from '../stores/card/CardStore';
 
 const CardContext = createContext<CardStore | undefined>(undefined);
 
-export const CardProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const CardsStoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // define how to get auth data
   const getAuthData = () => {
     const token = localStorage.getItem('trello_token');
@@ -22,10 +22,10 @@ export const CardProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-export const useCards = (): CardStore => {
+export const useCardsStore = (): CardStore => {
   const context = useContext(CardContext);
   if (context === undefined) {
-    throw new Error('useCards must be used within a CardProvider');
+    throw new Error('useCardsStore must be used within a CardProvider');
   }
   return context;
 };

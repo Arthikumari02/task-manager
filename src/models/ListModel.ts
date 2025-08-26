@@ -5,7 +5,7 @@ export class ListModel extends BaseModel {
   boardId: string;
   closed: boolean;
   pos: number;
-  private cardIds: Set<string> = new Set();
+  private cardIds: string[] = [];
 
   constructor(data: {
     id: string;
@@ -18,24 +18,19 @@ export class ListModel extends BaseModel {
     this.boardId = data.boardId;
     this.closed = data.closed;
     this.pos = data.pos;
-
-    // We don't call makeObservable here since it's already called in the parent class
-    // and we can't mix decorator syntax with manual annotations
   }
 
   // Card ID Management Methods
   addCardId(cardId: string): void {
-    // Create a new Set to trigger MobX reactivity
-    const newSet = new Set(this.cardIds);
-    newSet.add(cardId);
-    this.cardIds = newSet;
+    if (!this.cardIds.includes(cardId)) {
+      this.cardIds.push(cardId);
+    }
   }
 
   removeCardId(cardId: string): boolean {
-    if (this.cardIds.has(cardId)) {
-      // Create a new Set to trigger MobX reactivity
-      const newSet = new Set(this.cardIds);
-      newSet.delete(cardId);
+    if (this.cardIds.includes(cardId)) {
+      const newSet = [...this.cardIds];
+      newSet.splice(newSet.indexOf(cardId), 1);
       this.cardIds = newSet;
       return true;
     }
@@ -43,29 +38,39 @@ export class ListModel extends BaseModel {
   }
 
   hasCardId(cardId: string): boolean {
-    return this.cardIds.has(cardId);
+    return this.cardIds.includes(cardId);
   }
 
   getCardIds(): string[] {
-    return Array.from(this.cardIds);
+    return this.cardIds;
   }
 
   getCardCount(): number {
-    return this.cardIds.size;
+    return this.cardIds.length;
   }
 
   get cardIdsList(): string[] {
-    return Array.from(this.cardIds);
+    return this.cardIds;
   }
 
-  // update card position in ListModel cardIdsSet 
+  // update card position in ListModel cardIds array
   updateCardPosition(cardId: string, newPos: number): void {
-    const cardIds = [...this.cardIdsList];
-    const [movedCardId] = cardIds.splice(cardIds.indexOf(cardId), 1);
-    cardIds.splice(newPos, 0, movedCardId); // Insert at the exact position, not newPos + 1
+    if (!this.cardIds.includes(cardId)) {
+      return;
+    }
 
-    // Create a new Set to trigger MobX reactivity
-    this.cardIds = new Set(cardIds);
+    const cardIds = [...this.cardIds];
+    const currentIndex = cardIds.indexOf(cardId);
+    cardIds.splice(currentIndex, 1);
+    const actualLength = cardIds.length;
+
+    if (newPos >= actualLength) {
+      cardIds.push(cardId);
+    } else {
+      cardIds.splice(newPos, 0, cardId);
+    }
+
+    this.cardIds = cardIds;
   }
 
   // List Operations

@@ -1,10 +1,9 @@
 import React, { createContext, useContext, useRef } from 'react';
 import ListStore from '../stores/list/ListStore';
-import { useBoards } from './BoardContext';
 
 const ListContext = createContext<ListStore | undefined>(undefined);
 
-export const ListProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const ListsStoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const getAuthData = () => {
     const token = localStorage.getItem('trello_token');
@@ -22,7 +21,7 @@ export const ListProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-export const useLists = (): ListStore => {
+export const useListsStore = (): ListStore => {
   const context = useContext(ListContext);
   if (context === undefined) {
     throw new Error('useLists must be used within a ListProvider');

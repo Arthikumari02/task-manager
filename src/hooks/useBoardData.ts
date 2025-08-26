@@ -1,13 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useAuth, useBoards, useLists, useCards, useOrganizations } from '../contexts';
+import { useAuth, useBoardsStore, useLists, useCardsStore, useOrganizations } from '../contexts';
 import { UseBoardDataReturn, TrelloCard } from '../types';
 import { BoardModel, CardModel, ListModel } from '../models';
 
 export const useBoardData = (boardId: string): UseBoardDataReturn => {
   const { token, clientId } = useAuth();
-  const { boards, getBoardById, addBoardModel, hasBoard } = useBoards();
+  const { boards, getBoardById, addBoardModel, hasBoard } = useBoardsStore();
   const { fetchBoardLists, getListsMap, getListsForBoard, clearListsForBoard, getListById } = useLists();
-  const { fetchBoardCards, getCardsByListMap, getCardsForBoard } = useCards();
+  const { fetchBoardCards, getCardsByListMap, getCardsForBoard } = useCardsStore();
   const { organizations, fetchOrganizations } = useOrganizations();
 
   const [boardName, setBoardName] = useState<string>('');

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
-import Header from './Header';
-import CreateBoardModal from './CreateBoardModal';
-import CreateOrganizationModal from './CreateOrganizationModal';
+import Icon from '../assets/icons';
+import Header from './Header/Header';
+import CreateBoardModal from './Models/CreateBoardModal';
+import CreateOrganizationModal from './Models/CreateOrganizationModal';
 import Loading from './Loading';
-import { useOrganizations, useBoards, useAuth } from '../contexts';
+import { useOrganizations, useBoardsStore, useAuth } from '../contexts';
 import { TrelloBoard } from '../types';
 
 const Dashboard: React.FC = observer(() => {
@@ -14,7 +15,7 @@ const Dashboard: React.FC = observer(() => {
   const [isCreateOrgModalOpen, setIsCreateOrgModalOpen] = useState(false);
 
   const { currentOrganization, fetchOrganizations, isLoading: orgLoading } = useOrganizations();
-  const { boards, fetchBoardsForOrganization, isLoading: boardsLoading } = useBoards();
+  const { boards, fetchBoardsForOrganization, isLoading: boardsLoading } = useBoardsStore();
 
   // Initialize data on component mount
   useEffect(() => {
@@ -79,9 +80,7 @@ const Dashboard: React.FC = observer(() => {
             className="w-10 h-10 md:hidden bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center text-white transition-colors duration-200 shadow-lg"
             title="Create New Organization"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
+            <Icon type="plus" className="w-5 h-5" />
           </button>
         </div>
 
@@ -95,17 +94,7 @@ const Dashboard: React.FC = observer(() => {
             currentBoards.length === 0 ? (
               <div className="w-full flex flex-col justify-start">
                 <div className="flex items-center text-white mb-6">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="22"
-                    height="22"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                  >
-                    <circle cx="12" cy="7" r="4" />
-                    <path d="M5.5 21a7.5 7.5 0 0 1 13 0" />
-                  </svg>
+                  <Icon type="board" size={22} />
                   <span className="text-lg">You Don't have any board in workspace</span>
                 </div>
 
@@ -113,9 +102,7 @@ const Dashboard: React.FC = observer(() => {
                   onClick={() => setIsCreateModalOpen(true)}
                   className="w-60 h-20 bg-white hover:bg-blue-600 text-black hover:text-white px-6 py-3 rounded transition-colors duration-200 flex items-center space-x-2"
                 >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
+                  <Icon type="plus" className="w-5 h-5" />
                   <span>Create new board</span>
                 </button>
               </div>
@@ -123,11 +110,7 @@ const Dashboard: React.FC = observer(() => {
               <div>
                 {/* Section Header */}
                 <div className="flex items-center text-white mb-6">
-                  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path fillRule="evenodd" clipRule="evenodd"
-                      d="M15.9997 5.33301C13.053 5.33301 10.6663 7.71967 10.6663 10.6663C10.6663 13.613 13.053 15.9997 15.9997 15.9997C18.9463 15.9997 21.333 13.613 21.333 10.6663C21.333 7.71967 18.9463 5.33301 15.9997 5.33301ZM18.7997 10.6663C18.7997 9.11967 17.5463 7.86634 15.9997 7.86634C14.453 7.86634 13.1997 9.11967 13.1997 10.6663C13.1997 12.213 14.453 13.4663 15.9997 13.4663C17.5463 13.4663 18.7997 12.213 18.7997 10.6663ZM24.133 22.6663C24.133 21.813 19.9597 19.8663 15.9997 19.8663C12.0397 19.8663 7.86634 21.813 7.86634 22.6663V24.133H24.133V22.6663ZM5.33301 22.6663C5.33301 19.1197 12.4397 17.333 15.9997 17.333C19.5597 17.333 26.6663 19.1197 26.6663 22.6663V25.333C26.6663 26.0663 26.0663 26.6663 25.333 26.6663H6.66634C5.93301 26.6663 5.33301 26.0663 5.33301 25.333V22.6663Z"
-                      fill="white" />
-                  </svg>
+                  <Icon type="user" size={32} color="white" />
                   <h2 className="text-lg font-medium ml-2">Your Workspace boards</h2>
                 </div>
 
@@ -149,9 +132,7 @@ const Dashboard: React.FC = observer(() => {
                     onClick={() => setIsCreateModalOpen(true)}
                     className="w-60 h-20 bg-white hover:bg-[#2FA9F1] hover:text-white text-gray-600 p-6 rounded-sm transition-colors duration-200 flex items-center justify-center space-x-2 min-h-[120px]"
                   >
-                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
+                    <Icon type="plus" className="w-6 h-6" />
                     <span className="font-medium">Create new board</span>
                   </button>
                 </div>

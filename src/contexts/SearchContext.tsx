@@ -3,7 +3,7 @@ import SearchStore from '../stores/search/SearchStore';
 
 const SearchContext = createContext<SearchStore | undefined>(undefined);
 
-export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const SearchStoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const getAuthData = () => {
     const token = localStorage.getItem('trello_token');
@@ -20,7 +20,7 @@ export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   );
 };
 
-export const useSearch = (): SearchStore => {
+export const useSearchStore = (): SearchStore => {
   const context = useContext(SearchContext);
   if (context === undefined) {
     throw new Error('useSearch must be used within a SearchProvider');

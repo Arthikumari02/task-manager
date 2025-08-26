@@ -8,7 +8,7 @@ export const LOGOUT_EVENT = 'logout';
 
 const AuthContext = createContext<AuthStore | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthStoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Use the singleton authStore instance
   const authStoreRef = useRef(authStore);
 
@@ -19,7 +19,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-export const useAuth = (): AuthStore => {
+export const useAuthStore = (): AuthStore => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');

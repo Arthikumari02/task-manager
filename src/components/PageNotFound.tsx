@@ -1,11 +1,11 @@
 import React from 'react';
-import Header from './Header';
+import Header from './Header/Header';
 
 const PageNotFound: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#0079BF]">
-      <Header 
+      <Header
         title="Task Manager"
         showSearch={false}
         showNavigation={true}

@@ -1,8 +1,8 @@
 import React, { ReactNode } from 'react';
-import { AuthProvider } from './AuthContext';
-import { OrganizationProvider } from './OrganizationContext';
-import { BoardProvider } from './BoardContext';
-import { SearchProvider } from './SearchContext';
+import { AuthStoreProvider } from './AuthContext';
+import { OrganizationStoreProvider } from './OrganizationContext';
+import { BoardsStoreProvider } from './BoardContext';
+import { SearchStoreProvider } from './SearchContext';
 
 interface AppProviderProps {
   children: ReactNode;
@@ -10,14 +10,14 @@ interface AppProviderProps {
 
 export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   return (
-    <AuthProvider>
-      <OrganizationProvider>
-        <BoardProvider>
-          <SearchProvider>
+    <AuthStoreProvider>
+      <OrganizationStoreProvider>
+        <BoardsStoreProvider>
+          <SearchStoreProvider>
             {children}
-          </SearchProvider>
-        </BoardProvider>
-      </OrganizationProvider>
-    </AuthProvider>
+          </SearchStoreProvider>
+        </BoardsStoreProvider>
+      </OrganizationStoreProvider>
+    </AuthStoreProvider>
   );
 };

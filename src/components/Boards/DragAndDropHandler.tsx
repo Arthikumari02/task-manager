@@ -1,0 +1,98 @@
+import React, { useCallback } from 'react';
+import { observer } from 'mobx-react-lite';
+import { DropResult } from '@hello-pangea/dnd';
+import { useLists, useCardsStore } from '../../contexts';
+
+interface DragAndDropHandlerProps {
+  boardId: string;
+  onRefreshData: () => void;
+  children: (handleDragEnd: (result: DropResult) => void) => React.ReactNode;
+}
+
+/**
+ * Component responsible for handling drag and drop operations
+ */
+const DragAndDropHandler: React.FC<DragAndDropHandlerProps> = observer(({
+  boardId,
+  onRefreshData,
+  children
+}) => {
+  const listStore = useLists();
+  const cardStore = useCardsStore();
+
+  const { reorderLists } = listStore;
+  const { moveCard, reorderCardsInList } = cardStore;
+
+  const handleDragEnd = useCallback((result: DropResult) => {
+    const { destination, source, type, draggableId } = result;
+
+    if (!destination) {
+      return;
+    }
+
+    if (destination.droppableId === source.droppableId && destination.index === source.index) {
+      return;
+    }
+    if (type === 'list') {
+      reorderLists(boardId, source.index, destination.index);
+      setTimeout(() => {
+        onRefreshData();
+      }, 0);
+      return;
+    }
+    if (source.droppableId === destination.droppableId) {
+      const cardModel = cardStore.getCardById(draggableId);
+      if (!cardModel) {
+        console.error('Card not found:', draggableId);
+        return;
+      }
+
+      const sourceList = listStore.getListById(source.droppableId);
+      if (sourceList) {
+        sourceList.updateCardPosition(draggableId, destination.index);
+      }
+
+      cardModel.pos = destination.index;
+      cardStore.cardsMap.set(draggableId, cardModel);
+      reorderCardsInList(boardId, source.droppableId, source.index, destination.index).then(() => {
+        cardStore.notifyCardUpdated(draggableId, source.droppableId);
+      });
+    }
+    else {
+      const cardModel = cardStore.getCardById(draggableId);
+      if (!cardModel) {
+        console.error('Card not found:', draggableId);
+        return;
+      }
+
+      listStore.removeCardFromList(source.droppableId, draggableId);
+
+      const destList = listStore.getListById(destination.droppableId);
+      if (destList) {
+        const cardIds = [...destList.cardIdsList];
+        cardIds.splice(destination.index, 0, draggableId);
+
+        // Update card IDs in the destination list
+        destList.getCardIds().forEach(id => destList.removeCardId(id));
+        cardIds.forEach(id => destList.addCardId(id));
+      } else {
+        listStore.addCardToList(draggableId, destination.droppableId);
+      }
+
+      // Update the card's listId in CardStore
+      cardModel.listId = destination.droppableId;
+      cardStore.cardsMap.set(draggableId, cardModel);
+
+      // Handle card moving between lists in CardStore API
+      moveCard(boardId, draggableId, source.droppableId, destination.droppableId, destination.index);
+
+      // Notify subscribers about the card update
+      cardStore.notifyCardUpdated(draggableId, source.droppableId);
+      cardStore.notifyCardUpdated(draggableId, destination.droppableId);
+    }
+  }, [boardId, cardStore, listStore, moveCard, onRefreshData, reorderCardsInList, reorderLists]);
+
+  return <>{children(handleDragEnd)}</>;
+});
+
+export default DragAndDropHandler;

@@ -1,13 +1,14 @@
 import { makeObservable, observable, action } from 'mobx';
 import { BaseModel } from './BaseModel';
+// Note: Card API operations are now in hooks/APIs/CardAPI.ts
 
 export class CardModel extends BaseModel {
-   desc: string;
-   closed: boolean;
-   pos: number;
-   listId: string;
-   boardId: string;
-   url: string;
+  desc: string;
+  closed: boolean;
+  pos: number;
+  listId: string;
+  boardId: string;
+  url: string;
 
   constructor(data: {
     id: string;
@@ -26,8 +27,8 @@ export class CardModel extends BaseModel {
     this.listId = data.listId;
     this.boardId = data.boardId;
     this.url = data.url;
-    
-    makeObservable(this,{
+
+    makeObservable(this, {
       desc: observable,
       closed: observable,
       pos: observable,
@@ -35,15 +36,16 @@ export class CardModel extends BaseModel {
       boardId: observable,
       url: observable,
       updateNameOnServer: action,
-      moveToList: action,
-      updatePositionOnServer: action,
+      setListId: action,
+      setPosition: action,
+      setDescription: action,
       isValid: action,
       belongsToList: action,
       belongsToBoard: action,
     });
   }
 
-  // Card Operations
+  // Implement abstract method from BaseModel
   async updateNameOnServer(newName: string, authData: { token: string; clientId: string }): Promise<boolean> {
     try {
       const response = await fetch(
@@ -56,9 +58,8 @@ export class CardModel extends BaseModel {
           body: JSON.stringify({ name: newName })
         }
       );
-      
+
       if (response.ok) {
-        this.name = newName;
         return true;
       }
       return false;
@@ -68,60 +69,25 @@ export class CardModel extends BaseModel {
     }
   }
 
-  async moveToList(newListId: string, authData: { token: string; clientId: string }): Promise<boolean> {
-    try {
-      const response = await fetch(
-        `https://api.trello.com/1/cards/${this.id}?key=${authData.clientId}&token=${authData.token}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ idList: newListId })
-        }
-      );
-      
-      if (response.ok) {
-        this.listId = newListId;
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Error moving card:', error);
-      return false;
-    }
+  // Local state update methods
+  setListId(newListId: string): void {
+    this.listId = newListId;
   }
 
-  async updatePositionOnServer(newPos: number, authData: { token: string; clientId: string }): Promise<boolean> {
-    try {
-      const response = await fetch(
-        `https://api.trello.com/1/cards/${this.id}?key=${authData.clientId}&token=${authData.token}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ pos: newPos })
-        }
-      );
-      
-      if (response.ok) {
-        this.pos = newPos;
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Error updating card position:', error);
-      return false;
-    }
+  setPosition(newPos: number): void {
+    this.pos = newPos;
+  }
+
+  setDescription(newDesc: string): void {
+    this.desc = newDesc;
   }
 
   // Validation Methods
   isValid(): boolean {
-    return this.id.length > 0 && 
-           this.name.length > 0 && 
-           this.listId.length > 0 && 
-           this.boardId.length > 0;
+    return this.id.length > 0 &&
+      this.name.length > 0 &&
+      this.listId.length > 0 &&
+      this.boardId.length > 0;
   }
 
   belongsToList(listId: string): boolean {

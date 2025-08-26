@@ -6,7 +6,7 @@ export class BoardModel extends BaseModel {
   closed: boolean;
   url: string;
   organizationId: string;
-  listIds: Set<string> = new Set();
+  listIds: string[] = [];
 
   constructor(data: {
     id: string;
@@ -29,27 +29,34 @@ export class BoardModel extends BaseModel {
 
   // List ID Management Methods
   addListId(listId: string): void {
-    this.listIds.add(listId);
+    if (!this.listIds.includes(listId)) {
+      this.listIds.push(listId);
+    }
   }
 
   removeListId(listId: string): boolean {
-    return this.listIds.delete(listId);
+    const index = this.listIds.indexOf(listId);
+    if (index !== -1) {
+      this.listIds.splice(index, 1);
+      return true;
+    }
+    return false;
   }
 
   hasListId(listId: string): boolean {
-    return this.listIds.has(listId);
+    return this.listIds.includes(listId);
   }
 
   get allListIds(): string[] {
-    return Array.from(this.listIds);
+    return [...this.listIds];
   }
 
   getListCount(): number {
-    return this.listIds.size;
+    return this.listIds.length;
   }
 
   clearListIds(): void {
-    this.listIds.clear();
+    this.listIds = [];
   }
 
 
