@@ -92,7 +92,7 @@ const Header: React.FC<HeaderProps> = observer(({
           <div className="flex items-center space-x-4">
             {/* Search Bar - Desktop */}
             {showSearch && (
-              <div className="relative bg-[#4E97C2] rounded overflow-hidden">
+              <div className="relative bg-[#4E97C2] rounded overflow-visible">
                 <SearchBar
                   searchQuery={searchQuery}
                   setSearchQuery={setSearchQuery}
