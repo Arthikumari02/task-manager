@@ -94,22 +94,24 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = observer
       {/* Mobile: Bottom sheet */}
       <div className="md:hidden flex items-end min-h-screen">
         <div className="flex flex-col bg-white w-full shadow-xl animate-in slide-in-from-bottom duration-300">
-          <button
-            onClick={handleClose}
-            className="text-gray-500 self-end p-2 hover:text-gray-700 transition-colors duration-200"
-          >
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div className="flex justify-center border-b border-gray-200 py-3 relative">
+            <button
+              onClick={handleClose}
+              className="text-gray-500 absolute right-2 p-2 hover:text-gray-700 transition-colors duration-200"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <h2 className="text-base font-medium">Let's build a Organization</h2>
+          </div>
           {/* Mobile Body */}
-          <form onSubmit={handleSubmit} className="p-6 pb-8">
+          <form onSubmit={handleSubmit} className="p-4">
             <div className="mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">Let's build an Organization</h2>
               <p className="text-sm text-gray-600 mb-4">
                 Boost your productivity by making it easier for everyone to access boards in one location.
               </p>
-              <label htmlFor="mobileOrgName" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="mobileOrgName" className="block text-xs font-medium text-gray-500 uppercase mb-2">
                 ORGANIZATION NAME
               </label>
               <input
@@ -117,7 +119,7 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = observer
                 id="mobileOrgName"
                 value={orgName}
                 onChange={(e) => setOrgName(e.target.value)}
-                placeholder="Enter organization name"
+                placeholder="Integrity"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
                 autoFocus
@@ -125,7 +127,7 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = observer
             </div>
 
             {/* Mobile Footer */}
-            <div className="space-y-3 flex justify-start">
+            <div className="flex justify-center">
               <button
                 type="submit"
                 disabled={!orgName.trim() || isCreating}

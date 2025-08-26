@@ -20,7 +20,7 @@ const OrganizationDropdown: React.FC<OrganizationDropdownProps> = observer(({
   const navigate = useNavigate();
   const organizationStore = useOrganizations();
   const { organizations, currentOrganization, isLoading: isLoadingOrgs } = organizationStore;
-  
+
   // Handle organization change directly in the component
   const handleOrganizationChange = (organization: TrelloOrganization) => {
     organizationStore.setCurrentOrganization(organization);
@@ -51,7 +51,7 @@ const OrganizationDropdown: React.FC<OrganizationDropdownProps> = observer(({
         {/* Mobile trigger button */}
         <button
           onClick={onToggle}
-          className="bg-[#4E97C2] hover:bg-[#4E97C2] p-1 rounded transition duration-200 text-white"
+          className="bg-[#4E97C2] hover:bg-[#4E97C2] p-2 rounded-sm flex items-center justify-center w-8 h-8 transition duration-200 text-white"
           title="Organization"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

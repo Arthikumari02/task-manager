@@ -121,9 +121,9 @@ const TaskModal: React.FC<TaskModalProps> = observer(({
 
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+        <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden md:rounded-lg md:shadow-xl sm:rounded-none sm:shadow-none sm:max-h-full sm:h-full sm:m-0">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 sm:p-4">
             <div className="flex-1">
               {/* Editable Task Title */}
               {isEditingTitle ? (
@@ -172,10 +172,15 @@ const TaskModal: React.FC<TaskModalProps> = observer(({
           </div>
 
           {/* Content */}
-          <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+          <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)] sm:p-4 sm:max-h-[calc(100vh-120px)]">
             {/* Description Section */}
             <div className="mb-6">
-              <h3 className="text-sm font-semibold text-gray-700 mb-2">Description</h3>
+              <div className="flex items-center mb-2">
+                <svg className="w-5 h-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                </svg>
+                <h3 className="text-sm font-semibold text-gray-700">Description</h3>
+              </div>
               <div className="border-t border-gray-200 pt-2">
                 {isEditingDescription ? (
                   <div>
@@ -219,7 +224,12 @@ const TaskModal: React.FC<TaskModalProps> = observer(({
 
             {/* Activity Section */}
             <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-2">Activity</h3>
+              <div className="flex items-center mb-2">
+                <svg className="w-5 h-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                </svg>
+                <h3 className="text-sm font-semibold text-gray-700">Activity</h3>
+              </div>
               <div className="border-t border-gray-200 pt-2">
                 {/* Comments */}
                 {comments.map((comment) => (
