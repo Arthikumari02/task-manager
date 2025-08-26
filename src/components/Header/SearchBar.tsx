@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useSearchStore } from '../../contexts/SearchContext';
+import { useSearch } from '../../hooks/APIs/PerformSearch';
 import Icon from '../../assets/icons';
 import SearchResults from './SearchResults';
 
@@ -22,7 +23,8 @@ const SearchBar: React.FC<SearchBarProps> = observer(({
   onMobileToggle
 }) => {
   const searchStore = useSearchStore();
-  const { performSearch, clearSearch, hasResults, isSearching } = searchStore;
+  const { clearSearch, hasResults } = searchStore;
+  const { performSearch, isSearching } = useSearch();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const mobileSearchInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -36,7 +38,11 @@ const SearchBar: React.FC<SearchBarProps> = observer(({
     if (searchQuery.trim()) {
       searchTimeoutRef.current = setTimeout(() => {
         try {
-          performSearch(searchQuery);
+          performSearch(searchQuery, {
+            onError: (error) => {
+              console.error('SearchBar: Error triggering search:', error);
+            }
+          });
         } catch (error) {
           console.error('SearchBar: Error triggering search:', error);
         }
@@ -77,7 +83,11 @@ const SearchBar: React.FC<SearchBarProps> = observer(({
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      performSearch(searchQuery);
+      performSearch(searchQuery, {
+        onError: (error) => {
+          console.error('SearchBar: Error triggering search:', error);
+        }
+      });
       setShowSearchResults(true);
     }
   };

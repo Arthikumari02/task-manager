@@ -1,11 +1,12 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
-import { useAuth, useOrganizations } from '../../contexts';
+import { useAuth, useOrganizationsStore } from '../../contexts';
 import { buildTrelloAuthURL, extractTokenFromFragment, cleanupOAuthURL } from '../../utils/trelloAuth';
+import { useFetchOrganizations } from '../../hooks/APIs/FetchOrganizations';
 
 const Login: React.FC = observer(() => {
   const { login, clientId, fetchUserInfo } = useAuth();
-  const { fetchOrganizations } = useOrganizations();
+  const fetchOrganizations = useFetchOrganizations();
 
   const handleTrelloLogin = () => {
 
@@ -34,7 +35,7 @@ const Login: React.FC = observer(() => {
       // Clean up URL to remove sensitive token information
       cleanupOAuthURL();
     }
-  }, []);
+  }, [login, fetchUserInfo, fetchOrganizations]);
 
   return (
     <div className="min-h-screen bg-[#0079BF] flex flex-col items-center justify-center p-4 sm:p-6">

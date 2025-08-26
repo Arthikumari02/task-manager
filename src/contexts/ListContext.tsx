@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useRef } from 'react';
-import ListStore from '../stores/list/ListStore';
+import ListStore from '../stores/ListsStore/ListStore';
 
 const ListContext = createContext<ListStore | undefined>(undefined);
 

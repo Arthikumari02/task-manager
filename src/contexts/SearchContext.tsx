@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useRef } from 'react';
-import SearchStore from '../stores/search/SearchStore';
+import SearchStore from '../stores/SearchStore/SearchStore';
 
 const SearchContext = createContext<SearchStore | undefined>(undefined);
 

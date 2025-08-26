@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useRef } from 'react';
-import OrganizationStore from '../stores/organization/OrganizationStore';
+import OrganizationStore from '../stores/OrganizationsStore/OrganizationStore';
 
 const OrganizationContext = createContext<OrganizationStore | undefined>(undefined);
 

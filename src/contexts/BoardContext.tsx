@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react-lite';
 import React, { createContext, useContext, useRef } from 'react';
-import BoardStore from '../stores/board/BoardStore';
+import BoardStore from '../stores/BoardsStore/BoardStore';
 
 const BoardContext = createContext<BoardStore | undefined>(undefined);
 

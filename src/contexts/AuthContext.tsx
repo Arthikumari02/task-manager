@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useRef, useEffect } from 'react';
-import authStore, { AuthStore } from '../stores/auth/AuthStore';
+import authStore, { AuthStore } from '../stores/AuthStore/AuthStore';
 
 // Event system for logout notifications
 const logoutEventTarget = new EventTarget();

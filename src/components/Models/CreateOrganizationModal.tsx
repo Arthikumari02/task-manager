@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import Icon from '../../assets/icons';
-import { useOrganizations } from '../../contexts';
+import { useOrganizationsStore } from '../../contexts';
+import { useCreateOrganization } from '../../hooks/APIs/CreateOrganization';
 
 interface CreateOrganizationModalProps {
   isOpen: boolean;
@@ -10,7 +11,7 @@ interface CreateOrganizationModalProps {
 
 const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = observer(({ isOpen, onClose }) => {
   const [orgName, setOrgName] = useState('');
-  const { createOrganization, isCreating } = useOrganizations();
+  const { createOrganization, isCreating } = useCreateOrganization();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

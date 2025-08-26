@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Icon from '../../assets/icons';
 import { observer } from 'mobx-react-lite';
-import { useLists, useBoardsStore } from '../../contexts';
+import { useListsStore, useBoardsStore } from "../../contexts";
 import { AddListFormProps } from '../../types';
 import { BoardModel } from '../../models';
+import { useCreateList } from '../../hooks/APIs/CreateList';
 
 const AddListForm: React.FC<AddListFormProps> = observer(({
   boardId,
@@ -11,8 +12,9 @@ const AddListForm: React.FC<AddListFormProps> = observer(({
   onCancel,
   isFirstList = false
 }) => {
-  const { createList, isCreating } = useLists();
+  const listsStore = useListsStore();
   const { getBoardById } = useBoardsStore();
+  const { createList, isCreating } = useCreateList();
   const [listTitle, setListTitle] = useState('');
 
   const handleAddList = async () => {
@@ -27,12 +29,10 @@ const AddListForm: React.FC<AddListFormProps> = observer(({
           boardModel.addListId(listModel.id);
         }
       }
-    });
-
-    if (newList) {
+      
       setListTitle('');
       onListAdded();
-    }
+    });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

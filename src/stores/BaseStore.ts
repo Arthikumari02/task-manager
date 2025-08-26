@@ -1,5 +1,3 @@
-import { useAuth } from '../contexts/AuthContext';
-
 export interface BaseStoreState {
   isLoading: boolean;
   error: string | null;

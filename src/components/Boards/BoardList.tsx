@@ -2,7 +2,10 @@ import { Droppable } from '@hello-pangea/dnd';
 import { observer } from 'mobx-react-lite';
 import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import Icon from '../../assets/icons';
-import { useCardsStore, useLists } from '../../contexts';
+import { useCardsStore, useListsStore } from '../../contexts';
+import { useUpdateList } from '../../hooks/APIs/UpdateList';
+import { useRenameCard } from '../../hooks/APIs/RenameCard';
+import { useCloseList } from '../../hooks/APIs/CloseList';
 import { CardModel } from '../../models';
 import AddTaskForm from './AddTaskForm';
 import ListContextMenu from './ListContextMenu';
@@ -15,8 +18,8 @@ interface BoardListProps {
 }
 
 const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onTaskClick }) => {
-  const { getListById, updateList } = useLists();
-  const { getCardById, renameCard, isCreatingInList, registerCardUpdateListener, unregisterCardUpdateListener } = useCardsStore();
+  const { getListById } = useListsStore();
+  const { getCardById, isCreatingInList, registerCardUpdateListener, unregisterCardUpdateListener } = useCardsStore();
 
   // State to force re-render when cards are updated
   const [cardUpdateCounter, setCardUpdateCounter] = useState(0);
@@ -72,10 +75,10 @@ const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onT
   const handleTitleBlur = useCallback(() => {
     setIsEditingTitle(false);
     if (listModel && title.trim() && title !== listModel.name) {
-      // Update list name directly through store
-      updateList(listModel.id, title.trim());
+      // Update list name through API hook
+      useUpdateList().updateList(listModel.id, title.trim());
     }
-  }, [title, listModel, updateList]);
+  }, [title, listModel]);
 
   const handleTitleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -98,19 +101,17 @@ const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onT
     setShowContextMenu(false);
   }, []);
 
-  const { closeList } = useLists();
-
   const handleCloseList = useCallback(() => {
-    // Archive list directly through store
-    if (listModel && typeof closeList === 'function') {
-      closeList(listModel.id).then(success => {
-        if (success && onTaskAdded) {
-          // Use the same refresh mechanism as when a task is added
-          onTaskAdded();
-        }
-      });
+    if (listModel) {
+      // Close the list through the API hook
+      useCloseList().closeList(listModel.id);
+
+      // Notify parent that a task was added (to refresh data)
+      if (onTaskAdded) {
+        onTaskAdded();
+      }
     }
-  }, [listModel, closeList, onTaskAdded]);
+  }, [listModel, onTaskAdded]);
 
   const handleShowAddTaskForm = useCallback(() => {
     setShowAddTaskForm(true);
@@ -118,11 +119,9 @@ const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onT
 
   // Define handlers outside the render loop
   const handleTaskRename = useCallback((cardId: string, newName: string) => {
-    // Use CardStore's renameCard method
-    if (listModel?.boardId) {
-      renameCard(listModel.boardId, cardId, newName);
-    }
-  }, [listModel, renameCard]);
+    // Use renameCard API hook
+    useRenameCard().renameCard(cardId, newName);
+  }, []);
 
   const handleTaskClick = useCallback((cardId: string) => {
     // Pass the card click event up to the parent component

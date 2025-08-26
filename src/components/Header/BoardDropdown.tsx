@@ -30,7 +30,7 @@ const BoardDropdown: React.FC<BoardDropdownProps> = observer(({
       }
 
       setTimeout(() => {
-        // Navigate to the board - useBoardData will handle loading the data
+        // Navigate to the board - BoardView component will handle loading the data
         navigate(`/board/${boardId}`);
         onToggle(); // Close dropdown after selection
       }, 100);

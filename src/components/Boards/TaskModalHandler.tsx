@@ -3,6 +3,10 @@ import { observer } from 'mobx-react-lite';
 import { useCardsStore } from '../../contexts';
 import { TrelloCard } from '../../types';
 import TaskModal from './TaskModal';
+import { useRenameCard } from '../../hooks/APIs/RenameCard'
+import { useUpdateCardDescription } from '../../hooks/APIs/UpdateCardDescription'
+import { useDeleteCard } from '../../hooks/APIs/DeleteCard'
+import { useAddComment } from '../../hooks/APIs/AddComment'
 
 interface TaskModalHandlerProps {
   boardId: string;
@@ -24,36 +28,38 @@ const TaskModalHandler: React.FC<TaskModalHandlerProps> = observer(({
   children
 }) => {
   const cardStore = useCardsStore();
-  const { renameCard, updateCardDescription, deleteCard, addComment } = cardStore;
+  
+  // Initialize hooks at the component level
+  const { renameCard } = useRenameCard();
+  const { updateCardDescription } = useUpdateCardDescription();
+  const { deleteCard } = useDeleteCard();
+  const { addComment } = useAddComment();
 
   const [selectedTask, setSelectedTask] = useState<TrelloCard | null>(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
 
   const handleRenameTask = useCallback((taskId: string, newName: string) => {
-    if (boardId) {
-      const card = cardStore.getCardById(taskId);
-      if (card) {
-        renameCard(boardId, taskId, newName);
-      }
-    }
-  }, [boardId, renameCard, cardStore]);
+    renameCard(taskId, newName, {
+      onSuccess: () => onRefreshData()
+    });
+  }, [renameCard, onRefreshData]);
 
   const handleUpdateDescription = useCallback(async (cardId: string, description: string) => {
-    await updateCardDescription(cardId, description);
-    const card = cardStore.getCardById(cardId);
-    if (card) {
-      cardStore.notifyCardUpdated(cardId, card.listId);
-    }
-  }, [updateCardDescription, cardStore]);
+    await updateCardDescription(cardId, description, {
+      onSuccess: () => onRefreshData()
+    });
+  }, [updateCardDescription, onRefreshData]);
 
   const handleDeleteCard = useCallback(async (cardId: string) => {
-    await deleteCard(cardId);
-    onRefreshData();
+    await deleteCard(cardId, {
+      onSuccess: () => onRefreshData()
+    });
   }, [deleteCard, onRefreshData]);
 
   const handleAddComment = useCallback(async (cardId: string, comment: string) => {
-    await addComment(cardId, comment);
-    onRefreshData();
+    await addComment(cardId, comment, {
+      onSuccess: () => onRefreshData()
+    });
   }, [addComment, onRefreshData]);
 
   const handleCloseTaskModal = useCallback(() => {

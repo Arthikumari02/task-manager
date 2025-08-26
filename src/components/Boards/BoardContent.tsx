@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { useLists, useCardsStore } from '../../contexts';
+import { useListsStore, useCardsStore } from '../../contexts';
 import BoardList from './BoardList';
 import AddListForm from './AddListForm';
 import EmptyBoardState from './EmptyBoardState';
@@ -25,7 +25,7 @@ const BoardContent: React.FC<BoardContentProps> = observer(({
   onCancelAddList,
   onShowAddListForm
 }) => {
-  const listStore = useLists();
+  const listStore = useListsStore();
   const cardStore = useCardsStore();
 
   const [dataLoaded, setDataLoaded] = useState(false);

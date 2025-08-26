@@ -6,21 +6,25 @@ import Header from './Header/Header';
 import CreateBoardModal from './Models/CreateBoardModal';
 import CreateOrganizationModal from './Models/CreateOrganizationModal';
 import Loading from './Loading';
-import { useOrganizations, useBoardsStore, useAuth } from '../contexts';
+import { useOrganizationsStore, useBoardsStore, useAuth } from '../contexts';
+import { useFetchOrganizations } from '../hooks/APIs/FetchOrganizations';
+import { useFetchBoards } from '../hooks/APIs/FetchBoards';
 import { TrelloBoard } from '../types';
+import { BoardModel } from '../models';
 
 const Dashboard: React.FC = observer(() => {
   const navigate = useNavigate();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreateOrgModalOpen, setIsCreateOrgModalOpen] = useState(false);
 
-  const { currentOrganization, fetchOrganizations, isLoading: orgLoading } = useOrganizations();
-  const { boards, fetchBoardsForOrganization, isLoading: boardsLoading } = useBoardsStore();
+  const { currentOrganization, isLoading: orgLoading } = useOrganizationsStore();
+  const { isLoading: boardsLoading } = useBoardsStore();
 
   // Initialize data on component mount
+  const fetchOrganizations = useFetchOrganizations();
   useEffect(() => {
     fetchOrganizations();
-  }, []);
+  }, [fetchOrganizations]);
 
   // Fetch user info on mount if authenticated
   const { fetchUserInfo } = useAuth();
@@ -33,7 +37,7 @@ const Dashboard: React.FC = observer(() => {
   // Fetch boards when current organization changes
   useEffect(() => {
     if (currentOrganization) {
-      fetchBoardsForOrganization(currentOrganization.id);
+      useFetchBoards()(currentOrganization.id);
     }
   }, [currentOrganization]);
 
@@ -42,7 +46,7 @@ const Dashboard: React.FC = observer(() => {
   };
 
   const isLoading = orgLoading || boardsLoading;
-  const currentBoards = boards;
+  const currentBoards = useBoardsStore().currentOrganizationBoards;
 
   return (
     <div className="min-h-screen bg-[#0079BF]">
@@ -116,7 +120,6 @@ const Dashboard: React.FC = observer(() => {
 
                 {/* Boards Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {/* Existing Boards */}
                   {currentBoards.map((board: TrelloBoard) => (
                     <div
                       key={board.id}

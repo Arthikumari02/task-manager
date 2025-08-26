@@ -1,7 +1,10 @@
 import React, { useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { DropResult } from '@hello-pangea/dnd';
-import { useLists, useCardsStore } from '../../contexts';
+import { useListsStore, useCardsStore } from '../../contexts';
+import { useReorderLists } from '../../hooks/APIs/ReorderLists';
+import { useMoveCard } from '../../hooks/APIs/MoveCard';
+import { useReorderCardsInList } from '../../hooks/APIs/ReorderCardsInList';
 
 interface DragAndDropHandlerProps {
   boardId: string;
@@ -17,11 +20,11 @@ const DragAndDropHandler: React.FC<DragAndDropHandlerProps> = observer(({
   onRefreshData,
   children
 }) => {
-  const listStore = useLists();
+  const listStore = useListsStore();
   const cardStore = useCardsStore();
-
-  const { reorderLists } = listStore;
-  const { moveCard, reorderCardsInList } = cardStore;
+  const reorderLists = useReorderLists();
+  const reorderCardsInList = useReorderCardsInList();
+  const { moveCard } = useMoveCard();
 
   const handleDragEnd = useCallback((result: DropResult) => {
     const { destination, source, type, draggableId } = result;
@@ -90,7 +93,7 @@ const DragAndDropHandler: React.FC<DragAndDropHandlerProps> = observer(({
       cardStore.notifyCardUpdated(draggableId, source.droppableId);
       cardStore.notifyCardUpdated(draggableId, destination.droppableId);
     }
-  }, [boardId, cardStore, listStore, moveCard, onRefreshData, reorderCardsInList, reorderLists]);
+  }, [boardId, cardStore, listStore, onRefreshData, reorderLists, reorderCardsInList, moveCard]);
 
   return <>{children(handleDragEnd)}</>;
 });

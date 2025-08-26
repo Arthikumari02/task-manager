@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import Icon from '../../assets/icons';
 import { useNavigate } from 'react-router-dom';
-import { useOrganizations, useBoardsStore } from '../../contexts';
+import { useOrganizationsStore } from '../../contexts';
+import { useCreateBoard } from '../../hooks/APIs/CreateBoard';
 
 interface CreateBoardModalProps {
   isOpen: boolean;
@@ -12,8 +13,8 @@ interface CreateBoardModalProps {
 const CreateBoardModal: React.FC<CreateBoardModalProps> = observer(({ isOpen, onClose }) => {
   const [boardName, setBoardName] = useState('');
   const navigate = useNavigate();
-  const { currentOrganization } = useOrganizations();
-  const { createBoard, isCreating } = useBoardsStore();
+  const { currentOrganization } = useOrganizationsStore();
+  const { createBoard, isCreating } = useCreateBoard();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

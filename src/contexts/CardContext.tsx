@@ -1,6 +1,6 @@
 // CardContext.tsx
 import React, { createContext, useContext, useRef } from 'react';
-import CardStore from '../stores/card/CardStore';
+import CardStore from '../stores/CardsStore/CardStore';
 
 const CardContext = createContext<CardStore | undefined>(undefined);
 
