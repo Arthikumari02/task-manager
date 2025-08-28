@@ -1,13 +1,14 @@
 import { runInAction } from "mobx";
-import { useAuth } from "../../contexts";
 import { BoardModel } from "../../models";
+import { getAuthData } from "../../utils/auth";
 import { useBoardsStore } from "../../contexts";
+import { useCallback } from "react";
 
 export const useFetchBoards = () => {
-    const { token, clientId } = useAuth();
     const boardsStore = useBoardsStore();
-    
-    const fetchBoards = async (organizationId: string): Promise<void> => {
+
+    const fetchBoards = useCallback(async (organizationId: string): Promise<void> => {
+        const { token, clientId } = getAuthData();
         if (!token || !clientId) {
             console.error('Missing token or clientId');
             return;
@@ -22,60 +23,60 @@ export const useFetchBoards = () => {
             boardsStore.error = null;
         });
 
-    try {
-        const url = `https://api.trello.com/1/organizations/${organizationId}/boards?key=${clientId}&token=${token}&filter=open`;
+        try {
+            const url = `https://api.trello.com/1/organizations/${organizationId}/boards?key=${clientId}&token=${token}&filter=open`;
 
-        const response = await fetch(url);
+            const response = await fetch(url);
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Failed to fetch boards:', response.status, errorText);
-            throw new Error(`Failed to fetch boards: ${response.status} ${response.statusText}`);
-        }
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Failed to fetch boards:', response.status, errorText);
+                throw new Error(`Failed to fetch boards: ${response.status} ${response.statusText}`);
+            }
 
-        const trelloBoards = await response.json();
+            const trelloBoards = await response.json();
 
-        const mappedBoards = trelloBoards.map((board: any) => {
-            return {
-                id: board.id,
-                name: board.name,
-                desc: board.desc || '',
-                organizationId: organizationId,
-                closed: board.closed || false,
-                url: board.url || '',
-                prefs: board.prefs || {}
-            };
-        });
-
-        runInAction(() => {
-            // Create BoardModel instances
-            mappedBoards.forEach((boardData: BoardModel) => {
-                const boardModel = new BoardModel({
-                    id: boardData.id,
-                    name: boardData.name,
-                    desc: boardData.desc,
-                    closed: boardData.closed,
-                    url: boardData.url,
-                    organizationId: boardData.organizationId
-                });
-
-                boardsStore.addBoardModel(boardModel);
+            const mappedBoards = trelloBoards.map((board: any) => {
+                return {
+                    id: board.id,
+                    name: board.name,
+                    desc: board.desc || '',
+                    organizationId: organizationId,
+                    closed: board.closed || false,
+                    url: board.url || '',
+                    prefs: board.prefs || {}
+                };
             });
-        });
 
-    } catch (err) {
-        console.error('Error fetching boards:', err);
-        runInAction(() => {
-            boardsStore.error = err instanceof Error ? err.message : 'Failed to fetch boards';
-            // Clear board models on error
-            boardsStore.resetState();
-        });
-    } finally {
-        runInAction(() => {
-            boardsStore.isLoading = false;
-        });
-    }
-    };
-    
+            runInAction(() => {
+                // Create BoardModel instances
+                mappedBoards.forEach((boardData: BoardModel) => {
+                    const boardModel = new BoardModel({
+                        id: boardData.id,
+                        name: boardData.name,
+                        desc: boardData.desc,
+                        closed: boardData.closed,
+                        url: boardData.url,
+                        organizationId: boardData.organizationId
+                    });
+
+                    boardsStore.addBoardModel(boardModel);
+                });
+            });
+
+        } catch (err) {
+            console.error('Error fetching boards:', err);
+            runInAction(() => {
+                boardsStore.error = err instanceof Error ? err.message : 'Failed to fetch boards';
+                // Clear board models on error
+                boardsStore.resetState();
+            });
+        } finally {
+            runInAction(() => {
+                boardsStore.isLoading = false;
+            });
+        }
+    }, [boardsStore]);
+
     return fetchBoards;
 };

@@ -7,37 +7,39 @@ import CreateBoardModal from './Models/CreateBoardModal';
 import CreateOrganizationModal from './Models/CreateOrganizationModal';
 import Loading from './Loading';
 import { useOrganizationsStore, useBoardsStore, useAuth } from '../contexts';
-import { useFetchOrganizations } from '../hooks/APIs/FetchOrganizations';
 import { useFetchBoards } from '../hooks/APIs/FetchBoards';
-import { TrelloBoard } from '../types';
-import { BoardModel } from '../models';
+import { useFetchOrganizations } from '../hooks/APIs/FetchOrganizations';
 
 const Dashboard: React.FC = observer(() => {
   const navigate = useNavigate();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreateOrgModalOpen, setIsCreateOrgModalOpen] = useState(false);
 
-  const { currentOrganization, isLoading: orgLoading } = useOrganizationsStore();
+  const organizationsStore = useOrganizationsStore();
+  const { currentOrganization, isLoading: orgLoading } = organizationsStore;
   const { isLoading: boardsLoading } = useBoardsStore();
 
-  // Initialize data on component mount
-  const fetchOrganizations = useFetchOrganizations();
-  useEffect(() => {
-    fetchOrganizations();
-  }, [fetchOrganizations]);
-
-  // Fetch user info on mount if authenticated
   const { fetchUserInfo } = useAuth();
+  const fetchOrganizations = useFetchOrganizations();
+
   useEffect(() => {
     if (fetchUserInfo) {
       fetchUserInfo();
     }
+    if (!orgLoading && organizationsStore.organizations.length === 0 && !organizationsStore.error) {
+      organizationsStore.loadSavedOrganization();
+      if (organizationsStore.organizations.length === 0) {
+        fetchOrganizations();
+      }
+    }
   }, []);
 
-  // Fetch boards when current organization changes
+
+  const fetchBoards = useFetchBoards();
+
   useEffect(() => {
     if (currentOrganization) {
-      useFetchBoards()(currentOrganization.id);
+      fetchBoards(currentOrganization.id);
     }
   }, [currentOrganization]);
 
@@ -120,7 +122,7 @@ const Dashboard: React.FC = observer(() => {
 
                 {/* Boards Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {currentBoards.map((board: TrelloBoard) => (
+                  {currentBoards.map((board: any) => (
                     <div
                       key={board.id}
                       className="bg-white rounded-sm p-6 cursor-pointer hover:shadow-lg transition-all duration-200 min-h-[120px] flex items-center justify-center"

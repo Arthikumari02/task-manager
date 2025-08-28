@@ -73,6 +73,8 @@ class OrganizationStore {
 
   updateOrganizations = action((orgs: TrelloOrganization[]) => {
     this.organizations = orgs;
+    // Save organizations to localStorage for persistence
+    localStorage.setItem('organizations', JSON.stringify(orgs));
   });
 
   updateOrganizationModels = action((orgs: TrelloOrganization[]) => {
@@ -142,18 +144,36 @@ class OrganizationStore {
   // Load the saved organization from localStorage
   loadSavedOrganization = (): TrelloOrganization | null => {
     try {
+      // Try to load organizations list first
+      const savedOrgs = localStorage.getItem('organizations');
+      if (savedOrgs) {
+        const parsedOrgs = JSON.parse(savedOrgs) as TrelloOrganization[];
+        if (parsedOrgs.length > 0) {
+          // Update the organizations array
+          this.organizations = parsedOrgs;
+
+          // Rebuild organization models
+          this.updateOrganizationModels(parsedOrgs);
+        }
+      }
+
+      // Then try to load current organization
       const savedOrg = localStorage.getItem('current_organization');
       if (savedOrg) {
         const parsedOrg = JSON.parse(savedOrg) as TrelloOrganization;
-        // Only set if we don't already have a current organization
-        if (!this.currentOrganization) {
-          this.setCurrentOrganizationInternal(parsedOrg);
-        }
+
+        // Set the current organization regardless of existing state
+        this.setCurrentOrganization(parsedOrg);
         return parsedOrg;
+      } else if (this.organizations.length > 0) {
+        // If no saved organization but we have organizations, set the first one
+        this.setCurrentOrganization(this.organizations[0]);
+        return this.organizations[0];
       }
     } catch (error) {
       console.error('Error loading saved organization:', error);
       localStorage.removeItem('current_organization');
+      localStorage.removeItem('organizations');
     }
     return null;
   };

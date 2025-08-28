@@ -1,7 +1,6 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import { TrelloBoard } from '../../types';
 import { BoardModel } from '../../models';
-import { useFetchBoards } from '../../hooks/APIs/FetchBoards';
 
 class BoardStore {
   boardModels: Map<string, BoardModel> = new Map();

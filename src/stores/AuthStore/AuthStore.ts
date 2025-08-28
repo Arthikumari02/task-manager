@@ -13,6 +13,7 @@ class AuthStore {
     clientId: string | null = null;
     userInfo: UserInfo | null = null;
     isLoadingUserInfo: boolean = false;
+    private userInfoFetchPromise: Promise<void> | null = null; // Track ongoing fetch
 
     constructor() {
         makeObservable(this, {
@@ -60,45 +61,61 @@ class AuthStore {
 
     fetchUserInfo = async (): Promise<void> => {
         if (!this.token || !this.clientId) return;
+        
+        // If there's already a fetch in progress, return that promise
+        if (this.userInfoFetchPromise) {
+            return this.userInfoFetchPromise;
+        }
+        
+        // If we already have user info, don't fetch again
+        if (this.userInfo) {
+            return Promise.resolve();
+        }
 
         runInAction(() => {
             this.isLoadingUserInfo = true;
         });
         
-        try {
-            const response = await fetch(
-                `https://api.trello.com/1/members/me?key=${this.clientId}&token=${this.token}&fields=id,fullName,initials,email,username`
-            );
+        // Create and store the promise
+        this.userInfoFetchPromise = (async () => {
+            try {
+                const response = await fetch(
+                    `https://api.trello.com/1/members/me?key=${this.clientId}&token=${this.token}&fields=id,fullName,initials,email,username`
+                );
 
-            if (!response.ok) {
-                throw new Error(`Failed to fetch user info: ${response.statusText}`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch user info: ${response.statusText}`);
+                }
+
+                const userData = await response.json();
+
+                const userInfo = {
+                    id: userData.id,
+                    fullName: userData.fullName,
+                    initials: userData.initials,
+                    email: userData.email,
+                    username: userData.username
+                };
+
+                runInAction(() => {
+                    this.userInfo = userInfo;
+                });
+
+                // Store user info in localStorage for persistence
+                localStorage.setItem('trello_userInfo', JSON.stringify(userInfo));
+            } catch (error) {
+                console.error('Error fetching user info:', error);
+                // If fetch fails, try to load from localStorage
+                this.loadUserInfoFromStorage();
+            } finally {
+                runInAction(() => {
+                    this.isLoadingUserInfo = false;
+                    this.userInfoFetchPromise = null; // Clear the promise when done
+                });
             }
-
-            const userData = await response.json();
-
-            const userInfo = {
-                id: userData.id,
-                fullName: userData.fullName,
-                initials: userData.initials,
-                email: userData.email,
-                username: userData.username
-            };
-
-            runInAction(() => {
-                this.userInfo = userInfo;
-            });
-
-            // Store user info in localStorage for persistence
-            localStorage.setItem('trello_userInfo', JSON.stringify(userInfo));
-        } catch (error) {
-            console.error('Error fetching user info:', error);
-            // If fetch fails, try to load from localStorage
-            this.loadUserInfoFromStorage();
-        } finally {
-            runInAction(() => {
-                this.isLoadingUserInfo = false;
-            });
-        }
+        })();
+        
+        return this.userInfoFetchPromise;
     };
 
     private loadTokenFromStorage = action(() => {

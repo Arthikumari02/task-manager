@@ -4,14 +4,27 @@ import { OrganizationModel } from "../../models";
 import { getAuthData } from "../../utils/auth";
 import { useOrganizationsStore } from "../../contexts";
 
+// Track ongoing fetch to prevent duplicate calls
+let fetchOrganizationsPromise: Promise<void> | null = null;
+
 export const useFetchOrganizations = () => {
     const organizationsStore = useOrganizationsStore();
-    
+
     const fetchOrganizations = async (): Promise<void> => {
         const { token, clientId } = getAuthData();
         if (!token || !clientId) {
             console.error('Missing token or clientId');
             return;
+        }
+        
+        // If organizations already exist, don't fetch again
+        if (organizationsStore.organizations.length > 0) {
+            return;
+        }
+        
+        // If there's already a fetch in progress, return that promise
+        if (fetchOrganizationsPromise) {
+            return fetchOrganizationsPromise;
         }
 
         runInAction(() => {
@@ -20,84 +33,92 @@ export const useFetchOrganizations = () => {
         });
 
         const previousCurrentOrg = organizationsStore.currentOrganization;
+        
+        // Create and store the promise
+        fetchOrganizationsPromise = (async () => {
 
-    try {
-        const url = `https://api.trello.com/1/members/me/organizations?key=${clientId}&token=${token}`;
+        try {
+            const url = `https://api.trello.com/1/members/me/organizations?key=${clientId}&token=${token}`;
 
-        const response = await fetch(url);
+            const response = await fetch(url);
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Failed to fetch organizations:', response.status, errorText);
-            throw new Error(`Failed to fetch organizations: ${response.status} ${response.statusText}`);
-        }
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Failed to fetch organizations:', response.status, errorText);
+                throw new Error(`Failed to fetch organizations: ${response.status} ${response.statusText}`);
+            }
 
-        const trelloOrgs = await response.json();
+            const trelloOrgs = await response.json();
 
-        const mappedOrgs = trelloOrgs.map((org: any) => {
-            const orgData = {
-                id: org.id,
-                name: org.name,
-                displayName: org.displayName || org.name,
-                desc: org.desc || '',
-                url: org.url || ''
-            };
-            return orgData;
-        });
-
-        runInAction(() => {
-            // Update organizations
-            organizationsStore.organizations = mappedOrgs;
-
-            // Create OrganizationModel instances
-            mappedOrgs.forEach((orgData: TrelloOrganization) => {
-                const orgModel = new OrganizationModel({
-                    id: orgData.id,
-                    name: orgData.name,
-                    displayName: orgData.displayName,
-                    desc: orgData.desc,
-                    url: orgData.url
-                });
-                organizationsStore.organizationModels.set(orgData.id, orgModel);
+            const mappedOrgs = trelloOrgs.map((org: any) => {
+                const orgData = {
+                    id: org.id,
+                    name: org.name,
+                    displayName: org.displayName || org.name,
+                    desc: org.desc || '',
+                    url: org.url || ''
+                };
+                return orgData;
             });
 
-            // Set first organization as default if none selected, or restore the previous one if it exists
-            if (organizationsStore.organizations.length > 0) {
-                if (previousCurrentOrg) {
-                    // Try to find the previous current org in the new list
-                    const existingOrg = organizationsStore.organizations.find(
-                        (org: TrelloOrganization) => org.id === previousCurrentOrg.id
-                    );
-                    organizationsStore.setCurrentOrganization(existingOrg || organizationsStore.organizations[0]);
-                } else {
-                    // Try to load from localStorage first
-                    const savedOrg = organizationsStore.loadSavedOrganization();
-                    if (savedOrg) {
-                        // Find the saved org in the fetched list
+            runInAction(() => {
+                // Update organizations
+                organizationsStore.organizations = mappedOrgs;
+
+                // Create OrganizationModel instances
+                mappedOrgs.forEach((orgData: TrelloOrganization) => {
+                    const orgModel = new OrganizationModel({
+                        id: orgData.id,
+                        name: orgData.name,
+                        displayName: orgData.displayName,
+                        desc: orgData.desc,
+                        url: orgData.url
+                    });
+                    organizationsStore.organizationModels.set(orgData.id, orgModel);
+                });
+
+                // Set first organization as default if none selected, or restore the previous one if it exists
+                if (organizationsStore.organizations.length > 0) {
+                    if (previousCurrentOrg) {
+                        // Try to find the previous current org in the new list
                         const existingOrg = organizationsStore.organizations.find(
-                            (org: TrelloOrganization) => org.id === savedOrg.id
+                            (org: TrelloOrganization) => org.id === previousCurrentOrg.id
                         );
                         organizationsStore.setCurrentOrganization(existingOrg || organizationsStore.organizations[0]);
                     } else {
-                        organizationsStore.setCurrentOrganization(organizationsStore.organizations[0]);
+                        // Try to load from localStorage first
+                        const savedOrg = organizationsStore.loadSavedOrganization();
+                        if (savedOrg) {
+                            // Find the saved org in the fetched list
+                            const existingOrg = organizationsStore.organizations.find(
+                                (org: TrelloOrganization) => org.id === savedOrg.id
+                            );
+                            organizationsStore.setCurrentOrganization(existingOrg || organizationsStore.organizations[0]);
+                        } else {
+                            organizationsStore.setCurrentOrganization(organizationsStore.organizations[0]);
+                        }
                     }
                 }
-            }
-        });
+            });
 
-    } catch (err) {
-        console.error('Error fetching organizations:', err);
-        runInAction(() => {
-            organizationsStore.error = err instanceof Error ? err.message : 'Failed to fetch organizations';
-            organizationsStore.organizations = [];
-            organizationsStore.setCurrentOrganization(null);
-        });
-    } finally {
-        runInAction(() => {
-            organizationsStore.isLoading = false;
-        });
-    }
-    };
+        } catch (err) {
+            console.error('Error fetching organizations:', err);
+            runInAction(() => {
+                organizationsStore.error = err instanceof Error ? err.message : 'Failed to fetch organizations';
+                organizationsStore.organizations = [];
+                organizationsStore.setCurrentOrganization(null);
+            });
+        } finally {
+            runInAction(() => {
+                organizationsStore.isLoading = false;
+            });
+            // Clear the promise when done
+            fetchOrganizationsPromise = null;
+        }
+    })();
     
+    return fetchOrganizationsPromise;
+    }
+
     return fetchOrganizations;
 };
