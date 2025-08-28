@@ -1,4 +1,4 @@
-import { runInAction } from "mobx";
+// Removed runInAction import
 import { getAuthData } from "../../utils/auth";
 import { useListsStore } from "../../contexts";
 import { useFetchLists } from './FetchLists'
@@ -18,11 +18,10 @@ export const useReorderLists = () => {
         lists.splice(destinationIndex, 0, movedList);
 
         // Update local order: adjust pos hints immediately
-        runInAction(() => {
-            lists.forEach((list: { pos: number }) => {
-                list.pos = list.pos ?? 0;
-            });
+        lists.forEach((list: { pos: number }) => {
+            list.pos = list.pos ?? 0;
         });
+        listsStore.updateListPositions(lists);
 
         // Calculate new position for Trello API
         const { token, clientId } = getAuthData();
@@ -61,18 +60,11 @@ export const useReorderLists = () => {
             const updatedList = await response.json();
 
             // Update the list's position with the actual value returned from Trello
-            runInAction(() => {
-                const target = listsStore.listsMap.get(movedList.id);
-                if (target) {
-                    target.pos = updatedList.pos;
-                }
-            });
+            listsStore.updateListProperty(movedList.id, 'pos', updatedList.pos);
 
         } catch (error) {
             console.error('Error reordering lists:', error);
-            runInAction(() => {
-                listsStore.error = error instanceof Error ? error.message : 'Failed to reorder lists';
-            });
+            listsStore.setError(error instanceof Error ? error.message : 'Failed to reorder lists');
             // Re-fetch to restore - use the hook function directly
             await fetchLists.fetchLists(boardId, {
                 onSuccess: () => { }

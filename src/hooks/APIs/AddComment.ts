@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { runInAction } from "mobx";
+// Removed runInAction import
 import { getAuthData } from "../../utils/auth";
 import { useCardsStore } from "../../contexts";
 
@@ -17,10 +17,8 @@ export const useAddComment = () => {
         if (!token || !clientId) return false;
 
         setIsAdding(true);
-        runInAction(() => {
-            cardsStore.isLoading = true;
-            cardsStore.error = null;
-        });
+        cardsStore.setLoading(true);
+        cardsStore.setError(null);
 
         try {
             const response = await fetch(
@@ -40,22 +38,19 @@ export const useAddComment = () => {
 
             const result = await response.json();
             
-            runInAction(() => {
-                // Store the comment in the card store's commentsMap instead
-                // since CardModel doesn't have a comments property
-                const commentData = {
-                    id: result.id,
-                    text: commentText,
-                    date: new Date().toISOString(),
-                    cardId: cardId,
-                    memberCreator: result.memberCreator || { fullName: 'You' }
-                };
-                
-                // Add to comments collection in the store
-                const commentsForCard = cardsStore.commentsMap.get(cardId) || [];
-                cardsStore.commentsMap.set(cardId, [...commentsForCard, commentData]);
-                cardsStore.isLoading = false;
-            });
+            // Store the comment in the card store's commentsMap instead
+            // since CardModel doesn't have a comments property
+            const commentData = {
+                id: result.id,
+                text: commentText,
+                date: new Date().toISOString(),
+                cardId: cardId,
+                memberCreator: result.memberCreator || { fullName: 'You' }
+            };
+            
+            // Add to comments collection in the store
+            cardsStore.addComment(cardId, commentData);
+            cardsStore.setLoading(false);
 
             if (options?.onSuccess) {
                 options.onSuccess();
@@ -66,10 +61,8 @@ export const useAddComment = () => {
             console.error('Error adding comment:', error);
             const errorMessage = error instanceof Error ? error.message : 'Failed to add comment';
             
-            runInAction(() => {
-                cardsStore.error = errorMessage;
-                cardsStore.isLoading = false;
-            });
+            cardsStore.setError(errorMessage);
+            cardsStore.setLoading(false);
 
             if (options?.onError) {
                 options.onError(errorMessage);

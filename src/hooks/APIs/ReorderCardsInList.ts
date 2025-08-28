@@ -1,4 +1,4 @@
-import { runInAction } from "mobx";
+// Removed runInAction import
 import { getAuthData } from "../../utils/auth";
 import { useCardsStore } from "../../contexts";
 import { useFetchCards } from "./FetchCards";
@@ -18,11 +18,10 @@ export const useReorderCardsInList = () => {
         cards.splice(destinationIndex, 0, movedCard);
 
         // Update local order: adjust pos hints immediately
-        runInAction(() => {
-            cards.forEach((card: { pos: number }) => {
-                card.pos = card.pos ?? 0;
-            });
+        cards.forEach((card: { pos: number }) => {
+            card.pos = card.pos ?? 0;
         });
+        cardsStore.updateCardPositions(cards);
 
         // Calculate new position for Trello API
         const { token, clientId } = getAuthData();
@@ -61,25 +60,19 @@ export const useReorderCardsInList = () => {
             const updatedCard = await response.json();
 
             // Update the card's position with the actual value returned from Trello
-            runInAction(() => {
-                const target = cardsStore.cardsMap.get(movedCard.id);
-                if (target) {
-                    target.pos = updatedCard.pos;
-                }
-            });
+            cardsStore.updateCardPosition(movedCard.id, updatedCard.pos);
 
         } catch (error) {
             console.error('Error reordering cards:', error);
-            runInAction(() => {
-                cardsStore.error = error instanceof Error ? error.message : 'Failed to reorder cards';
-            });
+            cardsStore.setError(error instanceof Error ? error.message : 'Failed to reorder cards');
             // Re-fetch to restore
             // Need to get the boardId from the card
             const card = cardsStore.getCardById(movedCard.id);
             if (card) {
                 // Using the hook function directly since we're already inside the hook
-                await fetchCards.fetchCards(card.listId, card.boardId, {
-                    onSuccess: () => { }
+                await fetchCards.fetchCards(card.boardId, {
+                    onSuccess: (cards) => console.log('Cards refreshed after reordering error'),
+                    onError: (error) => console.error('Error refreshing cards:', error)
                 });
             }
         }

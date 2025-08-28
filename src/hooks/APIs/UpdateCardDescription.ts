@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { runInAction } from "mobx";
+// Removed runInAction import
 import { getAuthData } from "../../utils/auth";
 import { useCardsStore } from "../../contexts";
 
@@ -17,10 +17,8 @@ export const useUpdateCardDescription = () => {
         if (!token || !clientId) return false;
 
         setIsUpdating(true);
-        runInAction(() => {
-            cardsStore.isLoading = true;
-            cardsStore.error = null;
-        });
+        cardsStore.setLoading(true);
+        cardsStore.setError(null);
 
         try {
             const response = await fetch(
@@ -40,13 +38,8 @@ export const useUpdateCardDescription = () => {
 
             const updatedCard = await response.json();
             
-            runInAction(() => {
-                const card = cardsStore.getCardById(cardId);
-                if (card) {
-                    card.desc = updatedCard.desc;
-                }
-                cardsStore.isLoading = false;
-            });
+            cardsStore.updateCardProperty(cardId, 'desc', updatedCard.desc);
+            cardsStore.setLoading(false);
 
             if (options?.onSuccess) {
                 options.onSuccess();
@@ -57,10 +50,8 @@ export const useUpdateCardDescription = () => {
             console.error('Error updating card description:', error);
             const errorMessage = error instanceof Error ? error.message : 'Failed to update card description';
             
-            runInAction(() => {
-                cardsStore.error = errorMessage;
-                cardsStore.isLoading = false;
-            });
+            cardsStore.setError(errorMessage);
+            cardsStore.setLoading(false);
 
             if (options?.onError) {
                 options.onError(errorMessage);

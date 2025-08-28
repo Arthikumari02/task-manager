@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { runInAction } from 'mobx';
+// Removed runInAction import
 import { getAuthData } from "../../utils/auth";
 import { useListsStore } from "../../contexts";
 
@@ -17,10 +17,8 @@ export const useUpdateList = () => {
         if (!token || !clientId) return false;
 
         setIsUpdating(true);
-        runInAction(() => {
-            listsStore.isLoading = true;
-            listsStore.error = null;
-        });
+        listsStore.setLoading(true);
+        listsStore.setError(null);
 
         try {
             const response = await fetch(
@@ -40,17 +38,9 @@ export const useUpdateList = () => {
 
             const updatedList = await response.json();
             
-            runInAction(() => {
-                // Update the list in the store
-                const list = listsStore.getListById(listId);
-                if (list) {
-                    list.name = updatedList.name;
-                }
-            });
-            
-            runInAction(() => {
-                listsStore.isLoading = false;
-            });
+            // Update the list in the store
+            listsStore.updateListProperty(listId, 'name', updatedList.name);
+            listsStore.setLoading(false);
 
             if (options?.onSuccess) {
                 options.onSuccess();
@@ -61,13 +51,8 @@ export const useUpdateList = () => {
             console.error('Error updating list:', error);
             const errorMessage = error instanceof Error ? error.message : 'Failed to update list';
             
-            runInAction(() => {
-                listsStore.error = errorMessage;
-            });
-            
-            runInAction(() => {
-                listsStore.isLoading = false;
-            });
+            listsStore.setError(errorMessage);
+            listsStore.setLoading(false);
 
             if (options?.onError) {
                 options.onError(errorMessage);

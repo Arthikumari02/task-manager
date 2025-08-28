@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
-import { useOrganizationsStore } from '../../contexts/OrganizationContext';
+import { useOrganizationsStore, useBoardsStore } from '../../contexts';
 import Icon from '../../assets/icons';
 import { useNavigate } from 'react-router-dom';
 import { TrelloOrganization } from '../../types';
@@ -20,10 +20,13 @@ const OrganizationDropdown: React.FC<OrganizationDropdownProps> = observer(({
 }) => {
   const navigate = useNavigate();
   const organizationStore = useOrganizationsStore();
+  const boardsStore = useBoardsStore();
   const { organizations, currentOrganization, isLoading: isLoadingOrgs } = organizationStore;
 
   // Handle organization change directly in the component
   const handleOrganizationChange = (organization: TrelloOrganization) => {
+    // Clear boards before switching organization
+    boardsStore.resetState();
     organizationStore.setCurrentOrganization(organization);
     navigate('/');
     onToggle(); // Close dropdown after selection

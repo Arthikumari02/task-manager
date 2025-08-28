@@ -1,19 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useParams } from 'react-router-dom';
 import Header from '../Header/Header';
 import Loading from '../Loading';
-import { ListProvider, CardProvider, useBoardsStore, useListsStore, useCardsStore } from '../../contexts';
+import { ListsStoreProvider, CardsStoreProvider, SearchStoreProvider, useOrganizationsStore } from '../../contexts';
 import BoardHeader from './BoardHeader';
 import BoardContent from './BoardContent';
 import { useUpdateBoardName } from '../../hooks/APIs/UpdateBoardName'
 import { useFetchLists } from '../../hooks/APIs/FetchLists'
 import { useFetchCards } from '../../hooks/APIs/FetchCards';
+import { useFetchBoards } from '../../hooks/APIs/FetchBoards';
 
 const BoardViewContent: React.FC<{ boardId: string }> = observer(({ boardId }) => {
-  const { getBoardById } = useBoardsStore();
-  const listStore = useListsStore();
-  const cardStore = useCardsStore();
+
+  const organizationsStore = useOrganizationsStore();
+  const { currentOrganization } = organizationsStore;
 
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -23,42 +24,73 @@ const BoardViewContent: React.FC<{ boardId: string }> = observer(({ boardId }) =
   // Initialize hooks at the component level
   const { fetchLists } = useFetchLists();
   const { fetchCards } = useFetchCards();
+  const { fetchBoards } = useFetchBoards();
   const { updateBoardName } = useUpdateBoardName();
 
-  // Load board data
+  const loadedBoardRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (!boardId) return;
+
+    const isPageReload = !loadedBoardRef.current;
+    const isSameBoard = loadedBoardRef.current === boardId;
+
+    if (!isPageReload && isSameBoard) {
+      console.log(`Board ${boardId} data already loaded in this session, skipping fetch`);
+      setIsLoading(false); // Ensure loading state is reset
+      return;
+    }
 
     const loadData = async () => {
       setIsLoading(true);
 
-      // Get board data
-      const boardModel = getBoardById(boardId);
-      if (boardModel) {
-        setBoardName(boardModel.name);
-      }
-
-      // Load lists and cards
-      await fetchLists(boardId, {
-        onSuccess: async () => {
-          // Get all lists for the board
-          const lists = listStore.getListsForBoard(boardId);
-
-          // Fetch cards for each list
-          for (const list of lists) {
-            await fetchCards(list.id, boardId, {
-              onSuccess: () => {}
-            });
+      try {
+        await fetchBoards(currentOrganization?.id || '', {
+          onSuccess: (boards) => {
+            if (boards && boards.length > 0) {
+              // Find the board that matches our boardId
+              const currentBoard = boards.find(board => board.id === boardId);
+              if (currentBoard) {
+                setBoardName(currentBoard.name);
+              } else {
+                console.warn(`Board with ID ${boardId} not found in the response`);
+              }
+            } else {
+              console.warn('No boards data returned');
+            }
+          },
+          onError: (error) => {
+            console.error(`Error loading board details: ${error}`);
           }
-          
-          setIsLoading(false);
-        },
-        onError: () => setIsLoading(false)
-      });
+        });
+
+        // Now fetch lists and cards
+        await fetchLists(boardId, {
+          onSuccess: async (lists) => {
+            await fetchCards(boardId, {
+              onSuccess: () => {
+                loadedBoardRef.current = boardId;
+                setIsLoading(false);
+              },
+              onError: (error: string) => {
+                console.error('Error loading cards:', error);
+                setIsLoading(false);
+              }
+            });
+          },
+          onError: (error: string) => {
+            console.error('Error loading lists:', error);
+            setIsLoading(false);
+          }
+        });
+      } catch (error) {
+        console.error('Unexpected error loading board data:', error);
+        setIsLoading(false);
+      }
     };
 
     loadData();
-  }, [boardId, getBoardById, listStore, fetchLists, fetchCards]);
+  }, [boardId, fetchBoards, fetchLists, fetchCards]);
 
   // Track initial load completion
   useEffect(() => {
@@ -66,6 +98,8 @@ const BoardViewContent: React.FC<{ boardId: string }> = observer(({ boardId }) =
       setIsInitialLoad(false);
     }
   }, [isLoading, isInitialLoad]);
+
+  // We don't need to load boards here anymore as GlobalBoardLoader handles it
 
   const handleListAdded = () => {
     setShowNewListInput(false);
@@ -138,12 +172,13 @@ const BoardView: React.FC = observer(() => {
         showSearch={true}
         showNavigation={true}
       />
-
-      <ListProvider>
-        <CardProvider>
-          <BoardViewContent boardId={boardId} />
-        </CardProvider>
-      </ListProvider>
+      <SearchStoreProvider>
+        <ListsStoreProvider>
+          <CardsStoreProvider>
+            <BoardViewContent boardId={boardId} />
+          </CardsStoreProvider>
+        </ListsStoreProvider>
+      </SearchStoreProvider>
     </div>
   );
 });

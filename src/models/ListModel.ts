@@ -1,4 +1,3 @@
-import { action, computed, makeAutoObservable } from 'mobx';
 import { BaseModel } from './BaseModel';
 
 export class ListModel extends BaseModel {

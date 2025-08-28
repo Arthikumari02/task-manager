@@ -1,6 +1,6 @@
 import { Droppable } from '@hello-pangea/dnd';
 import { observer } from 'mobx-react-lite';
-import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Icon from '../../assets/icons';
 import { useCardsStore, useListsStore } from '../../contexts';
 import { useUpdateList } from '../../hooks/APIs/UpdateList';

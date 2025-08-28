@@ -1,4 +1,5 @@
 import { makeObservable, observable, computed, action, runInAction } from 'mobx';
+import { apiTracker } from '../../utils/apiTracker';
 
 interface UserInfo {
     id: string;
@@ -13,7 +14,6 @@ class AuthStore {
     clientId: string | null = null;
     userInfo: UserInfo | null = null;
     isLoadingUserInfo: boolean = false;
-    private userInfoFetchPromise: Promise<void> | null = null; // Track ongoing fetch
 
     constructor() {
         makeObservable(this, {
@@ -62,22 +62,16 @@ class AuthStore {
     fetchUserInfo = async (): Promise<void> => {
         if (!this.token || !this.clientId) return;
         
-        // If there's already a fetch in progress, return that promise
-        if (this.userInfoFetchPromise) {
-            return this.userInfoFetchPromise;
-        }
-        
         // If we already have user info, don't fetch again
         if (this.userInfo) {
             return Promise.resolve();
         }
 
-        runInAction(() => {
-            this.isLoadingUserInfo = true;
-        });
-        
-        // Create and store the promise
-        this.userInfoFetchPromise = (async () => {
+        // Use the centralized API tracker to prevent duplicate calls
+        return apiTracker.trackPromise('fetchUserInfo', async () => {
+            runInAction(() => {
+                this.isLoadingUserInfo = true;
+            });
             try {
                 const response = await fetch(
                     `https://api.trello.com/1/members/me?key=${this.clientId}&token=${this.token}&fields=id,fullName,initials,email,username`
@@ -110,12 +104,9 @@ class AuthStore {
             } finally {
                 runInAction(() => {
                     this.isLoadingUserInfo = false;
-                    this.userInfoFetchPromise = null; // Clear the promise when done
                 });
             }
-        })();
-        
-        return this.userInfoFetchPromise;
+        });
     };
 
     private loadTokenFromStorage = action(() => {

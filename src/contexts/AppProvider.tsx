@@ -2,6 +2,8 @@ import React, { ReactNode } from 'react';
 import { AuthStoreProvider } from './AuthContext';
 import { OrganizationStoreProvider } from './OrganizationContext';
 import { BoardsStoreProvider } from './BoardContext';
+import { SearchStoreProvider } from './SearchContext';
+import { ListsStoreProvider } from './ListContext';
 import { CardsStoreProvider } from './CardContext';
 
 interface AppProviderProps {
@@ -13,9 +15,13 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     <AuthStoreProvider>
       <OrganizationStoreProvider>
         <BoardsStoreProvider>
-          <CardsStoreProvider>
-            {children}
-          </CardsStoreProvider>
+          <SearchStoreProvider>
+            <ListsStoreProvider>
+              <CardsStoreProvider>
+                {children}
+              </CardsStoreProvider>
+            </ListsStoreProvider>
+          </SearchStoreProvider>
         </BoardsStoreProvider>
       </OrganizationStoreProvider>
     </AuthStoreProvider>

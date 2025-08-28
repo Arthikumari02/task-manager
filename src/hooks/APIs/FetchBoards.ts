@@ -1,27 +1,33 @@
-import { runInAction } from "mobx";
 import { BoardModel } from "../../models";
 import { getAuthData } from "../../utils/auth";
 import { useBoardsStore } from "../../contexts";
-import { useCallback } from "react";
+import { useCallback, useRef, useState } from "react";
+
+interface FetchBoardsOptions {
+    onSuccess?: (boards: BoardModel[]) => void;
+    onError?: (error: string) => void;
+}
 
 export const useFetchBoards = () => {
     const boardsStore = useBoardsStore();
+    const [isFetching, setIsFetching] = useState(false);
+    const lastFetchedIdRef = useRef<string | null>(null);
 
-    const fetchBoards = useCallback(async (organizationId: string): Promise<void> => {
+    const fetchBoards = useCallback(async (organizationId: string, options?: FetchBoardsOptions): Promise<void> => {
         const { token, clientId } = getAuthData();
         if (!token || !clientId) {
             console.error('Missing token or clientId');
             return;
         }
+
         if (!organizationId) {
             console.error('No organizationId provided');
             return;
         }
 
-        runInAction(() => {
-            boardsStore.isLoading = true;
-            boardsStore.error = null;
-        });
+        setIsFetching(true);
+        boardsStore.setLoading(true);
+        boardsStore.setError(null);
 
         try {
             const url = `https://api.trello.com/1/organizations/${organizationId}/boards?key=${clientId}&token=${token}&filter=open`;
@@ -31,52 +37,49 @@ export const useFetchBoards = () => {
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error('Failed to fetch boards:', response.status, errorText);
-                throw new Error(`Failed to fetch boards: ${response.status} ${response.statusText}`);
+                throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
             }
 
+            const boardModels: BoardModel[] = [];
+
+            // Parse the response JSON
             const trelloBoards = await response.json();
 
-            const mappedBoards = trelloBoards.map((board: any) => {
-                return {
+            // Process each board from the API response
+            trelloBoards.forEach((board: any) => {
+                const boardModel = new BoardModel({
                     id: board.id,
                     name: board.name,
                     desc: board.desc || '',
                     organizationId: organizationId,
                     closed: board.closed || false,
-                    url: board.url || '',
-                    prefs: board.prefs || {}
-                };
-            });
-
-            runInAction(() => {
-                // Create BoardModel instances
-                mappedBoards.forEach((boardData: BoardModel) => {
-                    const boardModel = new BoardModel({
-                        id: boardData.id,
-                        name: boardData.name,
-                        desc: boardData.desc,
-                        closed: boardData.closed,
-                        url: boardData.url,
-                        organizationId: boardData.organizationId
-                    });
-
-                    boardsStore.addBoardModel(boardModel);
+                    url: board.url || ''
                 });
+
+                boardsStore.addBoardModel(boardModel);
+                boardModels.push(boardModel);
             });
 
-        } catch (err) {
-            console.error('Error fetching boards:', err);
-            runInAction(() => {
-                boardsStore.error = err instanceof Error ? err.message : 'Failed to fetch boards';
-                // Clear board models on error
-                boardsStore.resetState();
-            });
+            // Call the success callback if provided
+            if (options?.onSuccess) {
+                options.onSuccess(boardModels);
+            }
+        } catch (error) {
+            console.error('Error fetching boards:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Failed to fetch boards';
+            boardsStore.setError(errorMessage);
+
+            // Call the error callback if provided
+            if (options?.onError) {
+                options.onError(errorMessage);
+            }
         } finally {
-            runInAction(() => {
-                boardsStore.isLoading = false;
-            });
+            setIsFetching(false);
+            boardsStore.setLoading(false);
+            lastFetchedIdRef.current = organizationId;
         }
+
     }, [boardsStore]);
 
-    return fetchBoards;
+    return { fetchBoards, isFetching };
 };

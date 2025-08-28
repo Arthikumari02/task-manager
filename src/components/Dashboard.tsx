@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../assets/icons';
@@ -6,7 +6,7 @@ import Header from './Header/Header';
 import CreateBoardModal from './Models/CreateBoardModal';
 import CreateOrganizationModal from './Models/CreateOrganizationModal';
 import Loading from './Loading';
-import { useOrganizationsStore, useBoardsStore, useAuth } from '../contexts';
+import { useOrganizationsStore, useBoardsStore, useAuthStore, SearchStoreProvider } from '../contexts';
 import { useFetchBoards } from '../hooks/APIs/FetchBoards';
 import { useFetchOrganizations } from '../hooks/APIs/FetchOrganizations';
 
@@ -19,29 +19,43 @@ const Dashboard: React.FC = observer(() => {
   const { currentOrganization, isLoading: orgLoading } = organizationsStore;
   const { isLoading: boardsLoading } = useBoardsStore();
 
-  const { fetchUserInfo } = useAuth();
+  const { fetchUserInfo } = useAuthStore();
   const fetchOrganizations = useFetchOrganizations();
 
   useEffect(() => {
+    // Always fetch user info on mount
     if (fetchUserInfo) {
       fetchUserInfo();
     }
-    if (!orgLoading && organizationsStore.organizations.length === 0 && !organizationsStore.error) {
-      organizationsStore.loadSavedOrganization();
+
+    // Always try to load organizations, regardless of current state
+    const loadOrganizationsData = async () => {
+
       if (organizationsStore.organizations.length === 0) {
-        fetchOrganizations();
+        await fetchOrganizations();
       }
-    }
+    };
+
+    loadOrganizationsData();
   }, []);
 
 
-  const fetchBoards = useFetchBoards();
+  const { fetchBoards } = useFetchBoards();
+
+  // Track the last organization ID we fetched boards for
+  const lastFetchedOrgIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (currentOrganization) {
-      fetchBoards(currentOrganization.id);
-    }
-  }, [currentOrganization]);
+    const loadBoardsData = async () => {
+      if (currentOrganization) {
+        // Always fetch boards when organization changes or on initial load
+        await fetchBoards(currentOrganization.id);
+        lastFetchedOrgIdRef.current = currentOrganization.id;
+      }
+    };
+
+    loadBoardsData();
+  }, [currentOrganization, fetchBoards]);
 
   const handleBoardClick = (boardId: string) => {
     navigate(`/board/${boardId}`);
@@ -52,12 +66,14 @@ const Dashboard: React.FC = observer(() => {
 
   return (
     <div className="min-h-screen bg-[#0079BF]">
-      <Header
-        title="Task Manager"
-        currentPage="dashboard"
-        showSearch={true}
-        showNavigation={true}
-      />
+      <SearchStoreProvider>
+        <Header
+          title="Task Manager"
+          currentPage="dashboard"
+          showSearch={true}
+          showNavigation={true}
+        />
+      </SearchStoreProvider>
 
       <main className="flex flex-col item-center px-4 py-6">
         {/* Workspace Header */}

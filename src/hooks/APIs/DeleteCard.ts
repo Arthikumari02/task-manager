@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { runInAction } from "mobx";
+// Removed runInAction import
 import { getAuthData } from "../../utils/auth";
 import { useCardsStore } from "../../contexts";
 
@@ -17,10 +17,8 @@ export const useDeleteCard = () => {
         if (!token || !clientId) return false;
 
         setIsDeleting(true);
-        runInAction(() => {
-            cardsStore.isLoading = true;
-            cardsStore.error = null;
-        });
+        cardsStore.setLoading(true);
+        cardsStore.setError(null);
 
         try {
             const response = await fetch(
@@ -34,11 +32,9 @@ export const useDeleteCard = () => {
                 throw new Error(`Failed to delete card: ${response.statusText}`);
             }
 
-            runInAction(() => {
-                // Remove the card from the store
-                cardsStore.cardsMap.delete(cardId);
-                cardsStore.isLoading = false;
-            });
+            // Remove the card from the store
+            cardsStore.removeCard(cardId);
+            cardsStore.setLoading(false);
 
             if (options?.onSuccess) {
                 options.onSuccess();
@@ -49,10 +45,8 @@ export const useDeleteCard = () => {
             console.error('Error deleting card:', error);
             const errorMessage = error instanceof Error ? error.message : 'Failed to delete card';
             
-            runInAction(() => {
-                cardsStore.error = errorMessage;
-                cardsStore.isLoading = false;
-            });
+            cardsStore.setError(errorMessage);
+            cardsStore.setLoading(false);
 
             if (options?.onError) {
                 options.onError(errorMessage);

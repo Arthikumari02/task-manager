@@ -1,4 +1,4 @@
-import { runInAction } from "mobx";
+// Removed runInAction import
 import { getAuthData } from "../../utils/auth";
 import { useCardsStore } from "../../contexts";
 
@@ -27,19 +27,12 @@ export const useMoveCard = () => {
 
             const updatedCard = await response.json();
             
-            runInAction(() => {
-                const card = cardsStore.getCardById(cardId);
-                if (card) {
-                    card.listId = updatedCard.idList;
-                }
-            });
+            cardsStore.updateCardProperty(cardId, 'listId', updatedCard.idList);
 
             return true;
         } catch (error) {
             console.error('Error moving card:', error);
-            runInAction(() => {
-                cardsStore.error = error instanceof Error ? error.message : 'Failed to move card';
-            });
+            cardsStore.setError(error instanceof Error ? error.message : 'Failed to move card');
             return false;
         }
     };

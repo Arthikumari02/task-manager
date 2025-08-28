@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import Icon from '../../assets/icons';
-import { useOrganizationsStore } from '../../contexts';
 import { useCreateOrganization } from '../../hooks/APIs/CreateOrganization';
 
 interface CreateOrganizationModalProps {

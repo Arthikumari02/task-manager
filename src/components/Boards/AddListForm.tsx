@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import Icon from '../../assets/icons';
 import { observer } from 'mobx-react-lite';
 import { useListsStore, useBoardsStore } from "../../contexts";
@@ -12,7 +12,6 @@ const AddListForm: React.FC<AddListFormProps> = observer(({
   onCancel,
   isFirstList = false
 }) => {
-  const listsStore = useListsStore();
   const { getBoardById } = useBoardsStore();
   const { createList, isCreating } = useCreateList();
   const [listTitle, setListTitle] = useState('');
@@ -29,7 +28,7 @@ const AddListForm: React.FC<AddListFormProps> = observer(({
           boardModel.addListId(listModel.id);
         }
       }
-      
+
       setListTitle('');
       onListAdded();
     });

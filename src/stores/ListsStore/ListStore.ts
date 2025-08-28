@@ -1,4 +1,4 @@
-import { makeObservable, observable, computed, action, runInAction } from 'mobx';
+import { makeObservable, observable, computed, action } from 'mobx';
 import { ListModel } from '../../models';
 
 class ListStore {
@@ -36,7 +36,12 @@ class ListStore {
       removeCardFromList: action,
       closeList: action,
       clearListsForBoard: action,
-      reset: action
+      reset: action,
+      setLoading: action,
+      setError: action,
+      updateListProperty: action,
+      setListClosed: action,
+      updateListPositions: action
     });
   }
 
@@ -80,6 +85,37 @@ class ListStore {
     this.listsMap.delete(listId);
   }
 
+  setLoading = (isLoading: boolean) => {
+    this.isLoading = isLoading;
+  };
+
+  setError = (error: string | null) => {
+    this.error = error;
+  };
+
+  updateListProperty = (listId: string, property: string, value: any) => {
+    const list = this.getListById(listId);
+    if (list && list.hasOwnProperty(property)) {
+      (list as any)[property] = value;
+    }
+  };
+
+  setListClosed = (listId: string, closed: boolean) => {
+    const list = this.getListById(listId);
+    if (list) {
+      list.closed = closed;
+    }
+  };
+
+  updateListPositions = (lists: { id: string; pos: number }[]) => {
+    lists.forEach(list => {
+      const listModel = this.getListById(list.id);
+      if (listModel) {
+        listModel.pos = list.pos;
+      }
+    });
+  };
+
   // Card relationship methods
   addCardToList = (cardId: string, listId: string): void => {
     const list = this.listsMap.get(listId);
@@ -116,39 +152,28 @@ class ListStore {
       }
 
       // Mark the list as closed in local state instead of removing it
-      runInAction(() => {
-        const list = this.listsMap.get(listId);
-        if (list) {
-          list.closed = true;
-        }
-      });
+      this.setListClosed(listId, true);
       return true;
 
     } catch (error) {
       console.error('Error closing list:', error);
-      runInAction(() => {
-        this.error = error instanceof Error ? error.message : 'Failed to close list';
-      });
+      this.setError(error instanceof Error ? error.message : 'Failed to close list');
       return false;
     }
   };
 
   clearListsForBoard = (boardId: string) => {
     const listsToRemove = Array.from(this.listsMap.values()).filter(list => list.boardId === boardId);
-    runInAction(() => {
-      listsToRemove.forEach(list => {
-        this.listsMap.delete(list.id);
-      });
+    listsToRemove.forEach(list => {
+      this.listsMap.delete(list.id);
     });
   };
 
   reset = () => {
-    runInAction(() => {
-      //this.listsMap.clear();
-      this.error = null;
-      this.isLoading = false;
-      this.isCreating = false;
-    });
+    //this.listsMap.clear();
+    this.setError(null);
+    this.setLoading(false);
+    this.isCreating = false;
   };
 }
 

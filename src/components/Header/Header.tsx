@@ -3,6 +3,7 @@ import Icon from '../../assets/icons';
 import { useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 import { useAuthStore } from '../../contexts/AuthContext';
+import { SearchStoreProvider } from '../../contexts/SearchContext';
 import CreateBoardModal from '../Models/CreateBoardModal';
 import CreateOrganizationModal from '../Models/CreateOrganizationModal';
 import OrganizationDropdown from './OrganizationDropdown';
@@ -92,12 +93,14 @@ const Header: React.FC<HeaderProps> = observer(({
             {/* Search Bar - Desktop */}
             {showSearch && (
               <div className="relative bg-[#4E97C2] rounded overflow-visible">
-                <SearchBar
-                  searchQuery={searchQuery}
-                  setSearchQuery={setSearchQuery}
-                  showSearchResults={showSearchResults}
-                  setShowSearchResults={setShowSearchResults}
-                />
+                <SearchStoreProvider>
+                  <SearchBar
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    showSearchResults={showSearchResults}
+                    setShowSearchResults={setShowSearchResults}
+                  />
+                </SearchStoreProvider>
               </div>
             )}
 
@@ -163,14 +166,16 @@ const Header: React.FC<HeaderProps> = observer(({
         {/* Mobile Search Bar */}
         {showSearch && showMobileSearch && (
           <div className="md:hidden py-2 pb-3">
-            <SearchBar
-              isMobile={true}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              showSearchResults={showSearchResults}
-              setShowSearchResults={setShowSearchResults}
-              onMobileToggle={toggleMobileSearch}
-            />
+            <SearchStoreProvider>
+              <SearchBar
+                isMobile={true}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                showSearchResults={showSearchResults}
+                setShowSearchResults={setShowSearchResults}
+                onMobileToggle={toggleMobileSearch}
+              />
+            </SearchStoreProvider>
           </div>
         )}
       </div>

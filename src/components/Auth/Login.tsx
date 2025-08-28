@@ -1,13 +1,10 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
-import { useAuth, useOrganizationsStore } from '../../contexts';
+import { useAuthStore, useOrganizationsStore } from '../../contexts';
 import { buildTrelloAuthURL, extractTokenFromFragment, cleanupOAuthURL } from '../../utils/trelloAuth';
-import { useFetchOrganizations } from '../../hooks/APIs/FetchOrganizations';
 
 const Login: React.FC = observer(() => {
-  const { login, clientId, fetchUserInfo } = useAuth();
-  const organizationsStore = useOrganizationsStore();
-  const fetchOrganizations = useFetchOrganizations();
+  const { login, clientId, fetchUserInfo } = useAuthStore();
 
   const handleTrelloLogin = () => {
 

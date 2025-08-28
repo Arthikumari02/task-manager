@@ -1,11 +1,8 @@
-import { action, makeObservable, observable, computed, runInAction } from 'mobx';
+import { action, makeObservable, observable, computed } from 'mobx';
 import { TrelloCard } from '../../types';
 import { CardModel } from '../../models';
 
 class CardStore {
-  fetchCards(boardId: string, arg1: () => void) {
-    throw new Error('Method not implemented.');
-  }
   cardsMap = new Map<string, CardModel>();
   commentsMap = new Map<string, Array<{ id: string; text: string; date: string; cardId: string; memberCreator: any }>>();
   isLoading: boolean = false;
@@ -30,7 +27,19 @@ class CardStore {
       reset: action,
       registerCardUpdateListener: action,
       unregisterCardUpdateListener: action,
-      notifyCardUpdated: action
+      notifyCardUpdated: action,
+      setError: action,
+      setLoading: action,
+      addCard: action,
+      removeCard: action,
+      updateLastFetchTime: action,
+      clearCardsForList: action,
+      setIsCreating: action,
+      updateCardProperty: action,
+      addComment: action,
+      updateCardPositions: action,
+      updateCardPosition: action,
+      clearCardsForBoard: action,
     });
   }
 
@@ -49,6 +58,72 @@ class CardStore {
       return this.creatingListIds.has(listId);
     };
   }
+
+  setError = (error: string | null) => {
+    this.error = error;
+  };
+
+  setLoading = (isLoading: boolean) => {
+    this.isLoading = isLoading;
+  };
+
+  addCard = (card: CardModel) => {
+    this.cardsMap.set(card.id, card);
+  };
+
+  removeCard = (cardId: string) => {
+    this.cardsMap.delete(cardId);
+  };
+
+  updateLastFetchTime = (listId: string, timestamp: number) => {
+    this.lastFetchTimes.set(listId, timestamp);
+  };
+
+  clearCardsForList = (boardId: string, listId: string) => {
+    const cardsToRemove = this.getCardsForList(boardId, listId);
+    cardsToRemove.forEach(card => {
+      this.cardsMap.delete(card.id);
+    });
+  };
+
+  clearCardsForBoard = (boardId: string) => {
+    const cardsToRemove = this.getCardsForBoard(boardId);
+    cardsToRemove.forEach(card => {
+      this.cardsMap.delete(card.id);
+    });
+  };
+
+  setIsCreating = (isCreating: boolean) => {
+    this.isCreating = isCreating;
+  };
+
+  updateCardProperty = (cardId: string, property: string, value: any) => {
+    const card = this.getCardById(cardId);
+    if (card && card.hasOwnProperty(property)) {
+      (card as any)[property] = value;
+    }
+  };
+
+  addComment = (cardId: string, commentData: { id: string; text: string; date: string; cardId: string; memberCreator: any }) => {
+    const commentsForCard = this.commentsMap.get(cardId) || [];
+    this.commentsMap.set(cardId, [...commentsForCard, commentData]);
+  };
+
+  updateCardPositions = (cards: { id: string; pos: number }[]) => {
+    cards.forEach(card => {
+      const cardModel = this.getCardById(card.id);
+      if (cardModel) {
+        cardModel.pos = card.pos;
+      }
+    });
+  };
+
+  updateCardPosition = (cardId: string, position: number) => {
+    const card = this.getCardById(cardId);
+    if (card) {
+      card.pos = position;
+    }
+  };
 
   getCardsForBoard = (boardId: string): TrelloCard[] => {
     return this.allCards
@@ -131,7 +206,6 @@ class CardStore {
   unregisterCardUpdateListener = (listId: string, callback: () => void): void => {
     const listeners = this.cardUpdateListeners.get(listId);
     if (listeners) {
-      const hadCallback = listeners.has(callback);
       listeners.delete(callback);
       if (listeners.size === 0) {
         this.cardUpdateListeners.delete(listId);
@@ -160,16 +234,14 @@ class CardStore {
   };
 
   reset = () => {
-    runInAction(() => {
-      this.cardsMap.clear();
-      this.error = null;
-      this.isLoading = false;
-      this.isCreating = false;
-      this.creatingListIds.clear(); // Clear creating list IDs
-      this.cardUpdateListeners.clear(); // Clear all listeners
-      // Clear last fetch times to ensure fresh data after login
-      this.lastFetchTimes.clear();
-    });
+    this.cardsMap.clear();
+    this.error = null;
+    this.isLoading = false;
+    this.isCreating = false;
+    this.creatingListIds.clear(); // Clear creating list IDs
+    this.cardUpdateListeners.clear(); // Clear all listeners
+    // Clear last fetch times to ensure fresh data after login
+    this.lastFetchTimes.clear();
   };
 }
 

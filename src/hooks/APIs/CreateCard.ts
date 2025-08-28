@@ -1,4 +1,4 @@
-import { runInAction } from "mobx";
+// Removed runInAction import
 import { CardModel } from "../../models";
 import { getAuthData } from "../../utils/auth";
 import { useCardsStore } from "../../contexts";
@@ -10,10 +10,8 @@ export const useCreateCard = () => {
         const { token, clientId } = getAuthData();
         if (!token || !clientId || !listId) return null;
 
-        runInAction(() => {
-            cardsStore.isCreating = true;
-            cardsStore.error = null;
-        });
+        cardsStore.setIsCreating(true);
+        cardsStore.setError(null);
 
         try {
             const response = await fetch(
@@ -48,9 +46,7 @@ export const useCreateCard = () => {
                 url: newCard.url || ''
             });
 
-            runInAction(() => {
-                cardsStore.cardsMap.set(cardModel.id, cardModel);
-            });
+            cardsStore.addCard(cardModel);
 
             // Notify callback if provided
             if (onSuccess) {
@@ -61,14 +57,10 @@ export const useCreateCard = () => {
 
         } catch (error) {
             console.error('Error creating card:', error);
-            runInAction(() => {
-                cardsStore.error = error instanceof Error ? error.message : 'Failed to create card';
-            });
+            cardsStore.setError(error instanceof Error ? error.message : 'Failed to create card');
             return null;
         } finally {
-            runInAction(() => {
-                cardsStore.isCreating = false;
-            });
+            cardsStore.setIsCreating(false);
         }
     };
 

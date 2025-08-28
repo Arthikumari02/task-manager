@@ -3,7 +3,6 @@ import { observer } from 'mobx-react-lite';
 import { useListsStore, useCardsStore, useBoardsStore } from '../../contexts';
 import { useFetchLists } from '../../hooks/APIs/FetchLists';
 import { useFetchCards } from '../../hooks/APIs/FetchCards';
-import { BoardModel } from '../../models';
 
 interface BoardDataLoaderProps {
   boardId: string;
@@ -35,11 +34,8 @@ const BoardDataLoader: React.FC<BoardDataLoaderProps> = observer(({
 
     if (!boardId) return;
 
-    if (dataLoadedForBoard === boardId) {
-      setIsLoading(false);
-      onDataLoaded(true);
-      return;
-    }
+    // Always load data on initial mount or when boardId changes
+    // This ensures data is loaded properly on page reload
 
     setIsLoading(true);
 
@@ -61,30 +57,26 @@ const BoardDataLoader: React.FC<BoardDataLoaderProps> = observer(({
         });
       });
 
-      // Get all lists for the board
-      const lists = listStore.getListsForBoard(boardId);
-
-      // Fetch cards for each list using the API hook
-      for (const list of lists) {
-        await new Promise<void>((resolve) => {
-          fetchCards.fetchCards(list.id, boardId, {
-            onSuccess: (cards) => {
-              if (!isMounted) return;
-              cards.forEach(card => {
-                const listModel = listStore.getListById(card.listId);
-                if (listModel) {
-                  listModel.addCardId(card.id);
-                }
-              });
-              resolve();
-            },
-            onError: (error) => {
-              console.error('Error fetching cards:', error);
-              resolve();
-            }
-          });
+      await new Promise<void>((resolve) => {
+        fetchCards.fetchCards(boardId, {
+          onSuccess: (cards) => {
+            if (!isMounted) return;
+            cards.forEach(card => {
+              const listModel = listStore.getListById(card.listId);
+              if (listModel) {
+                listModel.addCardId(card.id);
+              } else {
+                console.warn(`List ${card.listId} not found for card ${card.id}`);
+              }
+            });
+            resolve();
+          },
+          onError: (error) => {
+            console.error('Error fetching cards:', error);
+            resolve();
+          }
         });
-      }
+      });
 
       if (isMounted) {
         setDataLoadedForBoard(boardId);
@@ -102,12 +94,12 @@ const BoardDataLoader: React.FC<BoardDataLoaderProps> = observer(({
     return () => {
       isMounted = false;
     };
-  }, [boardId, boardModel, dataLoadedForBoard, listStore, onDataLoaded, fetchLists, fetchCards]);
+  }, [boardId, boardModel, dataLoadedForBoard, onDataLoaded]);
 
   // Load data when boardId changes
   useEffect(() => {
     loadBoardData();
-  }, [boardId, loadBoardData]);
+  }, [boardId]);
 
   // Reset data loaded state when boardId changes
   useEffect(() => {

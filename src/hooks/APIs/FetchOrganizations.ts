@@ -1,11 +1,7 @@
-import { runInAction } from "mobx";
 import { TrelloOrganization } from "../../types";
-import { OrganizationModel } from "../../models";
 import { getAuthData } from "../../utils/auth";
 import { useOrganizationsStore } from "../../contexts";
-
-// Track ongoing fetch to prevent duplicate calls
-let fetchOrganizationsPromise: Promise<void> | null = null;
+import { apiTracker } from "../../utils/apiTracker";
 
 export const useFetchOrganizations = () => {
     const organizationsStore = useOrganizationsStore();
@@ -16,66 +12,46 @@ export const useFetchOrganizations = () => {
             console.error('Missing token or clientId');
             return;
         }
-        
-        // If organizations already exist, don't fetch again
-        if (organizationsStore.organizations.length > 0) {
-            return;
-        }
-        
-        // If there's already a fetch in progress, return that promise
-        if (fetchOrganizationsPromise) {
-            return fetchOrganizationsPromise;
-        }
 
-        runInAction(() => {
-            organizationsStore.isLoading = true;
-            organizationsStore.error = null;
-        });
+        // Always fetch fresh data on explicit calls to fetchOrganizations
+        // This ensures we get updated data on page reload
 
-        const previousCurrentOrg = organizationsStore.currentOrganization;
-        
-        // Create and store the promise
-        fetchOrganizationsPromise = (async () => {
+        // Use the centralized API tracker to prevent duplicate calls
+        return apiTracker.trackPromise('fetchOrganizations', async () => {
+            organizationsStore.setLoading(true);
+            organizationsStore.setError(null);
 
-        try {
-            const url = `https://api.trello.com/1/members/me/organizations?key=${clientId}&token=${token}`;
+            const previousCurrentOrg = organizationsStore.currentOrganization;
 
-            const response = await fetch(url);
+            try {
+                const url = `https://api.trello.com/1/members/me/organizations?key=${clientId}&token=${token}`;
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Failed to fetch organizations:', response.status, errorText);
-                throw new Error(`Failed to fetch organizations: ${response.status} ${response.statusText}`);
-            }
+                const response = await fetch(url);
 
-            const trelloOrgs = await response.json();
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Failed to fetch organizations:', response.status, errorText);
+                    throw new Error(`Failed to fetch organizations: ${response.status} ${response.statusText}`);
+                }
 
-            const mappedOrgs = trelloOrgs.map((org: any) => {
-                const orgData = {
-                    id: org.id,
-                    name: org.name,
-                    displayName: org.displayName || org.name,
-                    desc: org.desc || '',
-                    url: org.url || ''
-                };
-                return orgData;
-            });
+                const trelloOrgs = await response.json();
 
-            runInAction(() => {
+                const mappedOrgs = trelloOrgs.map((org: any) => {
+                    const orgData = {
+                        id: org.id,
+                        name: org.name,
+                        displayName: org.displayName || org.name,
+                        desc: org.desc || '',
+                        url: org.url || ''
+                    };
+                    return orgData;
+                });
+
                 // Update organizations
-                organizationsStore.organizations = mappedOrgs;
+                organizationsStore.updateOrganizations(mappedOrgs);
 
                 // Create OrganizationModel instances
-                mappedOrgs.forEach((orgData: TrelloOrganization) => {
-                    const orgModel = new OrganizationModel({
-                        id: orgData.id,
-                        name: orgData.name,
-                        displayName: orgData.displayName,
-                        desc: orgData.desc,
-                        url: orgData.url
-                    });
-                    organizationsStore.organizationModels.set(orgData.id, orgModel);
-                });
+                organizationsStore.updateOrganizationModels(mappedOrgs);
 
                 // Set first organization as default if none selected, or restore the previous one if it exists
                 if (organizationsStore.organizations.length > 0) {
@@ -99,25 +75,16 @@ export const useFetchOrganizations = () => {
                         }
                     }
                 }
-            });
 
-        } catch (err) {
-            console.error('Error fetching organizations:', err);
-            runInAction(() => {
-                organizationsStore.error = err instanceof Error ? err.message : 'Failed to fetch organizations';
-                organizationsStore.organizations = [];
+            } catch (err) {
+                console.error('Error fetching organizations:', err);
+                organizationsStore.setError(err instanceof Error ? err.message : 'Failed to fetch organizations');
+                organizationsStore.updateOrganizations([]);
                 organizationsStore.setCurrentOrganization(null);
-            });
-        } finally {
-            runInAction(() => {
-                organizationsStore.isLoading = false;
-            });
-            // Clear the promise when done
-            fetchOrganizationsPromise = null;
-        }
-    })();
-    
-    return fetchOrganizationsPromise;
+            } finally {
+                organizationsStore.setLoading(false);
+            }
+        });
     }
 
     return fetchOrganizations;

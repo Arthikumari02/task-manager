@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { runInAction } from "mobx";
+// Removed runInAction import
 import { getAuthData } from "../../utils/auth";
 import { useBoardsStore } from "../../contexts";
 
@@ -17,10 +17,8 @@ export const useUpdateBoardName = () => {
         if (!token || !clientId) return false;
 
         setIsUpdating(true);
-        runInAction(() => {
-            boardsStore.isLoading = true;
-            boardsStore.error = null;
-        });
+        boardsStore.setLoading(true);
+        boardsStore.setError(null);
 
         try {
             const response = await fetch(
@@ -40,14 +38,9 @@ export const useUpdateBoardName = () => {
 
             const updatedBoard = await response.json();
 
-            runInAction(() => {
-                // Update BoardModel
-                const boardModel = boardsStore.getBoardById(boardId);
-                if (boardModel) {
-                    boardModel.name = updatedBoard.name;
-                }
-                boardsStore.isLoading = false;
-            });
+            // Update BoardModel
+            boardsStore.updateBoardProperty(boardId, 'name', updatedBoard.name);
+            boardsStore.setLoading(false);
 
             if (options?.onSuccess) {
                 options.onSuccess();
@@ -59,10 +52,8 @@ export const useUpdateBoardName = () => {
             console.error('Error updating board name:', error);
             const errorMessage = error instanceof Error ? error.message : 'Failed to update board name';
             
-            runInAction(() => {
-                boardsStore.error = errorMessage;
-                boardsStore.isLoading = false;
-            });
+            boardsStore.setError(errorMessage);
+            boardsStore.setLoading(false);
             
             if (options?.onError) {
                 options.onError(errorMessage);

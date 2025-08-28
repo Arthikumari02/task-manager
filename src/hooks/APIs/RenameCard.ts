@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { runInAction } from "mobx";
+// Removed runInAction import
 import { getAuthData } from "../../utils/auth";
 import { useCardsStore } from "../../contexts";
 
@@ -17,10 +17,8 @@ export const useRenameCard = () => {
         if (!token || !clientId) return false;
 
         setIsRenaming(true);
-        runInAction(() => {
-            cardsStore.isLoading = true;
-            cardsStore.error = null;
-        });
+        cardsStore.setLoading(true);
+        cardsStore.setError(null);
 
         try {
             const response = await fetch(
@@ -40,13 +38,8 @@ export const useRenameCard = () => {
 
             const updatedCard = await response.json();
             
-            runInAction(() => {
-                const card = cardsStore.getCardById(cardId);
-                if (card) {
-                    card.name = updatedCard.name;
-                }
-                cardsStore.isLoading = false;
-            });
+            cardsStore.updateCardProperty(cardId, 'name', updatedCard.name);
+            cardsStore.setLoading(false);
 
             if (options?.onSuccess) {
                 options.onSuccess();
@@ -57,10 +50,8 @@ export const useRenameCard = () => {
             console.error('Error renaming card:', error);
             const errorMessage = error instanceof Error ? error.message : 'Failed to rename card';
             
-            runInAction(() => {
-                cardsStore.error = errorMessage;
-                cardsStore.isLoading = false;
-            });
+            cardsStore.setError(errorMessage);
+            cardsStore.setLoading(false);
 
             if (options?.onError) {
                 options.onError(errorMessage);

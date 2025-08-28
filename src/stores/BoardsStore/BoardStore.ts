@@ -1,4 +1,4 @@
-import { makeAutoObservable, runInAction } from 'mobx';
+import { makeAutoObservable, action } from 'mobx';
 import { TrelloBoard } from '../../types';
 import { BoardModel } from '../../models';
 
@@ -10,10 +10,15 @@ class BoardStore {
   currentBoardId: string | null = null;
 
   constructor(private getAuthData: () => { token: string | null; clientId: string | null }) {
-    makeAutoObservable(this);
+    makeAutoObservable(this, {
+      setLoading: action,
+      setError: action,
+      setCurrentBoardId: action,
+      updateBoardProperty: action,
+      resetState: action
+    });
   }
 
-  // Computed values for better performance and clean code
   get boardCount(): number {
     return this.boardModels.size;
   }
@@ -32,17 +37,17 @@ class BoardStore {
   }
 
 
-  // Alias for compatibility
   fetchBoardsForOrganization = (organizationId: string): Promise<void> => {
-    // This is a placeholder that will be replaced by the useFetchBoards hook in components
-    // We keep this method for backward compatibility
-    console.warn('fetchBoardsForOrganization called directly from BoardStore. Use useFetchBoards hook instead.');
     return Promise.resolve();
   };
 
   // BoardModel access methods
   getBoardById = (boardId: string): BoardModel | undefined => {
     return this.boardModels.get(boardId);
+  }
+
+  getBoardsByOrganizationId = (organizationId: string): BoardModel[] => {
+    return Array.from(this.boardModels.values()).filter(board => board.organizationId === organizationId);
   }
 
   addListToBoard = (boardId: string, listId: string): void => {
@@ -54,6 +59,25 @@ class BoardStore {
 
   addBoardModel = (boardModel: BoardModel): void => {
     this.boardModels.set(boardModel.id, boardModel);
+  }
+
+  setLoading = (isLoading: boolean): void => {
+    this.isLoading = isLoading;
+  }
+
+  setError = (error: string | null): void => {
+    this.error = error;
+  }
+
+  setCurrentBoardId = (boardId: string | null): void => {
+    this.currentBoardId = boardId;
+  }
+
+  updateBoardProperty = (boardId: string, property: string, value: any): void => {
+    const board = this.getBoardById(boardId);
+    if (board && board.hasOwnProperty(property)) {
+      (board as any)[property] = value;
+    }
   }
 
   hasBoard = (boardId: string): boolean => {
@@ -68,19 +92,15 @@ class BoardStore {
   }
 
   setCurrentBoard = async (boardId: string) => {
-    runInAction(() => {
-      this.currentBoardId = boardId;
-    });
+    this.setCurrentBoardId(boardId);
   }
 
   resetState = () => {
-    runInAction(() => {
-      this.boardModels.clear();
-      this.isLoading = false;
-      this.error = null;
-      this.isCreating = false;
-      this.currentBoardId = null;
-    });
+    this.boardModels.clear();
+    this.setLoading(false);
+    this.setError(null);
+    this.isCreating = false;
+    this.setCurrentBoardId(null);
   };
 }
 

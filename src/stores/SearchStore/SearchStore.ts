@@ -1,6 +1,5 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import { TrelloCard } from '../../types';
-import { useSearch } from '../../hooks/APIs/PerformSearch';
 
 interface SearchResult {
   cards: TrelloCard[];

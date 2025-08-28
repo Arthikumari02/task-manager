@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { runInAction } from "mobx";
+// Removed runInAction import
 import { CardModel } from "../../models";
 import { getAuthData } from "../../utils/auth";
 import { useCardsStore } from "../../contexts";
@@ -16,18 +16,14 @@ export const useSearch = () => {
     const performSearch = async (query: string, options?: SearchOptions): Promise<CardModel[]> => {
         const { token, clientId } = getAuthData();
         if (!token || !clientId || !query.trim()) {
-            runInAction(() => {
-                cardsStore.isLoading = false;
-                cardsStore.error = null;
-            });
+            cardsStore.setLoading(false);
+            cardsStore.setError(null);
             return [];
         }
 
         setIsSearching(true);
-        runInAction(() => {
-            cardsStore.isLoading = true;
-            cardsStore.error = null;
-        });
+        cardsStore.setLoading(true);
+        cardsStore.setError(null);
 
         try {
             const response = await fetch(
@@ -54,13 +50,11 @@ export const useSearch = () => {
                     url: card.url || ''
                 }));
 
-            runInAction(() => {
-                // Update the cards in the store
-                cards.forEach(card => {
-                    cardsStore.cardsMap.set(card.id, card);
-                });
-                cardsStore.isLoading = false;
+            // Update the cards in the store
+            cards.forEach(card => {
+                cardsStore.addCard(card);
             });
+            cardsStore.setLoading(false);
 
             if (options?.onSuccess) {
                 options.onSuccess(cards);
@@ -72,10 +66,8 @@ export const useSearch = () => {
             console.error('Error searching cards:', error);
             const errorMessage = error instanceof Error ? error.message : 'Failed to search cards';
             
-            runInAction(() => {
-                cardsStore.error = errorMessage;
-                cardsStore.isLoading = false;
-            });
+            cardsStore.setError(errorMessage);
+            cardsStore.setLoading(false);
             
             if (options?.onError) {
                 options.onError(errorMessage);
