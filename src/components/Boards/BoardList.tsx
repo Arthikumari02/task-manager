@@ -10,6 +10,7 @@ import { CardModel } from '../../models';
 import AddTaskForm from './AddTaskForm';
 import ListContextMenu from './ListContextMenu';
 import TaskCard from './TaskCard';
+import { runInAction } from 'mobx';
 
 interface BoardListProps {
   listId: string;
@@ -19,11 +20,14 @@ interface BoardListProps {
 
 const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onTaskClick }) => {
   const { getListById } = useListsStore();
+  const { updateList } = useUpdateList();
+  const {closeList} = useCloseList();
+  const {renameCard} = useRenameCard();
+  const cardsStore = useCardsStore();
   const { getCardById, isCreatingInList, registerCardUpdateListener, unregisterCardUpdateListener } = useCardsStore();
 
   // State to force re-render when cards are updated
   const [cardUpdateCounter, setCardUpdateCounter] = useState(0);
-
   // Get models directly from stores
   const listModel = getListById(listId);
 
@@ -58,7 +62,7 @@ const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onT
         unregisterCardUpdateListener(listId, handleCardUpdate);
       };
     }
-  }, [listId, registerCardUpdateListener, unregisterCardUpdateListener, handleCardUpdate]);
+  }, [listId]);
 
   const handleCancelAddTask = useCallback(() => {
     setShowAddTaskForm(false);
@@ -76,9 +80,21 @@ const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onT
     setIsEditingTitle(false);
     if (listModel && title.trim() && title !== listModel.name) {
       // Update list name through API hook
-      useUpdateList().updateList(listModel.id, title.trim());
+      updateList(listModel.id, title.trim(), {
+        onSuccess: () => {
+          if (onTaskAdded) {
+            onTaskAdded();
+          }
+        },
+        onError: (error) => {
+          console.error("Failed to rename list:", error);
+          setTitle(listModel.name);
+        }
+      });
+    } else {
+      setTitle(listModel?.name || 'Untitled');
     }
-  }, [title, listModel]);
+  }, [title, listModel, onTaskAdded, updateList]);
 
   const handleTitleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -103,15 +119,21 @@ const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onT
 
   const handleCloseList = useCallback(() => {
     if (listModel) {
-      // Close the list through the API hook
-      useCloseList().closeList(listModel.id);
-
-      // Notify parent that a task was added (to refresh data)
-      if (onTaskAdded) {
-        onTaskAdded();
-      }
+      closeList(listModel.id)
+      .then(() => {
+          if (onTaskAdded) { 
+              onTaskAdded(); 
+          }
+      })
+      .catch(error => {
+          console.error("Failed to close list:", error);
+          // Refresh on error to get the current state
+          if (onTaskAdded) { 
+              onTaskAdded(); 
+          }
+      });
     }
-  }, [listModel, onTaskAdded]);
+  }, [listModel, onTaskAdded, closeList]);
 
   const handleShowAddTaskForm = useCallback(() => {
     setShowAddTaskForm(true);
@@ -120,8 +142,18 @@ const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onT
   // Define handlers outside the render loop
   const handleTaskRename = useCallback((cardId: string, newName: string) => {
     // Use renameCard API hook
-    useRenameCard().renameCard(cardId, newName);
-  }, []);
+    renameCard(cardId, newName, {
+      onSuccess: () => {
+        const card = getCardById(cardId);
+        if (card) {
+          runInAction(() => {
+            card.name = newName; // <- MobX observable update
+          });
+        }
+      },
+      onError: (error) => console.error(error),
+    });
+  }, [renameCard]);
 
   const handleTaskClick = useCallback((cardId: string) => {
     // Pass the card click event up to the parent component
@@ -130,33 +162,30 @@ const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onT
     }
   }, [onTaskClick]);
 
-  // Get cards for this list using MobX reactivity directly
-  const listCards: CardModel[] = useMemo(() => {
-    if (!listModel?.cardIdsList) {
-      return [];
+  const listCards: CardModel[] = listModel?.cardIdsList
+  .map(id => getCardById(id))
+  .filter((c): c is CardModel => !!c)
+  .sort((a, b) => (a.pos || 0) - (b.pos || 0)) || [];
+
+
+  const handleDeleteCard = (cardId: string) => {
+    const card = cardsStore.getCardById(cardId);
+    if (!card) return;
+  
+    const list = getListById(card.listId);
+    if (list) {
+      runInAction(() => {
+        const index = list.cardIdsList.indexOf(cardId);
+        if (index > -1) list.cardIdsList.splice(index, 1); // MobX observable update
+      });
     }
-
-    const cards = listModel.cardIdsList
-      .map(cardId => {
-        const card = getCardById(cardId);
-        if (!card) {
-          console.log(`BoardList: Card ${cardId} not found in CardStore for list ${listId}`);
-        }
-        return card;
-      })
-      .filter((card): card is CardModel => card !== undefined && card !== null)
-      // Sort cards by position to ensure correct order after drag and drop
-      .sort((a, b) => (a.pos || 0) - (b.pos || 0));
-
-    return cards;
-  }, [
-    listModel?.cardIdsList,
-    getCardById,
-    listId,
-    cardUpdateCounter, // Add cardUpdateCounter to dependencies to force re-render on card updates
-    // We don't need to add individual card properties as dependencies
-    // The cardUpdateCounter will handle forcing re-renders when cards change
-  ]);
+  
+    runInAction(() => {
+      cardsStore.removeCard(cardId); // observable map/array
+    });
+  
+  };
+  
 
   // If listModel is null, render a placeholder
   if (!listModel) {
@@ -214,6 +243,7 @@ const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onT
                 index={index}
                 onTaskRename={handleTaskRename}
                 onTaskClick={handleTaskClick}
+                onTaskDelete={handleDeleteCard}
               />
             ))}
             {provided.placeholder}

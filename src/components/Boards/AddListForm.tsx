@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import Icon from '../../assets/icons';
 import { observer } from 'mobx-react-lite';
-import { useListsStore, useBoardsStore } from "../../contexts";
+import { useBoardsStore } from "../../contexts";
 import { AddListFormProps } from '../../types';
 import { BoardModel } from '../../models';
 import { useCreateList } from '../../hooks/APIs/CreateList';
+import { runInAction } from 'mobx';
 
 const AddListForm: React.FC<AddListFormProps> = observer(({
   boardId,
@@ -20,18 +21,26 @@ const AddListForm: React.FC<AddListFormProps> = observer(({
     const title = listTitle.trim();
     if (!title) return;
 
-    const newList = await createList(boardId, title, (listModel) => {
-      // Update the board model with the new list ID
-      const boardModel = getBoardById(boardId);
-      if (boardModel && boardModel instanceof BoardModel) {
-        if (!boardModel.hasListId(listModel.id)) {
-          boardModel.addListId(listModel.id);
-        }
-      }
-
+    try {
+      await createList(boardId, title, (listModel) => {
+          const boardModel = getBoardById(boardId);
+          if (boardModel && boardModel instanceof BoardModel) {
+              if (!boardModel.hasListId(listModel.id)) {
+                  boardModel.addListId(listModel.id);
+              } runInAction(() => {
+                if (!boardModel.hasListId(listModel.id)) {
+                    boardModel.addListId(listModel.id);
+                }
+              });
+          }
+      });
       setListTitle('');
-      onListAdded();
-    });
+      onListAdded(); 
+      
+      } catch (error) {
+      console.error("Failed to create list:", error);
+      onListAdded(); 
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

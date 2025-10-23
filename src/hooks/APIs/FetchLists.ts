@@ -19,30 +19,11 @@ export const useFetchLists = () => {
             return;
         }
 
-        // Check if we've fetched this board recently
-        const now = Date.now();
-        const lastFetch = listsStore.lastFetchTimes.get(boardId) || 0;
-        const isPageReload = !document.referrer || document.referrer.includes('login');
-
-        // Skip fetch only if it's not a page reload and we've fetched recently
-        if (!isPageReload && now - lastFetch < listsStore.fetchDebounceMs) {
-            // Return existing data instead of fetching again
-            const existingLists = listsStore.getListsForBoard(boardId);
-            if (existingLists.length > 0 && options?.onSuccess) {
-                options.onSuccess(existingLists);
-                return;
-            }
-        }
-
         setIsFetching(true);
-        // Update last fetch time
-        listsStore.lastFetchTimes.set(boardId, now);
         listsStore.setLoading(true);
         listsStore.setError(null);
 
-        // Clear existing lists for this board to ensure fresh data on page reload
-        listsStore.clearListsForBoard(boardId);
-
+        
         try {
             const url = `https://api.trello.com/1/boards/${boardId}/lists?key=${clientId}&token=${token}&filter=open`;
 
@@ -54,6 +35,9 @@ export const useFetchLists = () => {
 
             const trelloLists = await response.json();
             const listModelsToAdd: ListModel[] = [];
+            // Clear existing lists for this board to ensure fresh data on page reload
+            listsStore.clearListsForBoard(boardId);
+
 
             trelloLists.forEach((list: any) => {
                 const listModel = new ListModel({

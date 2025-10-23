@@ -77,6 +77,7 @@ export interface TaskCardProps {
   index: number;
   onTaskRename: (taskId: string, newName: string) => void;
   onTaskClick?: (taskId: string) => void;
+  onTaskDelete?: (taskId: string) => void;
 }
 
 export interface AddTaskFormProps {

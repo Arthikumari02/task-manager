@@ -1,4 +1,4 @@
-import { makeObservable, observable } from 'mobx';
+import { action, makeObservable, observable } from 'mobx';
 import { BaseModel } from './BaseModel';
 
 export class BoardModel extends BaseModel {
@@ -23,7 +23,11 @@ export class BoardModel extends BaseModel {
     this.organizationId = data.organizationId;
 
     makeObservable(this, {
-      listIds: observable
+      listIds: observable,
+      addListId: action,
+      removeListId: action,
+      clearListIds: action,
+      updateNameOnServer: action
     });
   }
 

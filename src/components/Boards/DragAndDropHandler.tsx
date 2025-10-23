@@ -36,12 +36,14 @@ const DragAndDropHandler: React.FC<DragAndDropHandlerProps> = observer(({
     if (destination.droppableId === source.droppableId && destination.index === source.index) {
       return;
     }
-    if (type === 'list') {
-      reorderLists(boardId, source.index, destination.index);
-      setTimeout(() => {
-        onRefreshData();
-      }, 0);
-      return;
+    if (type === 'list') { reorderLists(boardId, source.index, destination.index) .then(() => 
+      { 
+        onRefreshData(); 
+      }) .catch(
+        error => { console.error("List reorder failed:", error); onRefreshData(); 
+
+      }); 
+      return; 
     }
     if (source.droppableId === destination.droppableId) {
       const cardModel = cardStore.getCardById(draggableId);
@@ -58,7 +60,11 @@ const DragAndDropHandler: React.FC<DragAndDropHandlerProps> = observer(({
       cardModel.pos = destination.index;
       cardStore.cardsMap.set(draggableId, cardModel);
       reorderCardsInList(boardId, source.droppableId, source.index, destination.index).then(() => {
-        cardStore.notifyCardUpdated(draggableId, source.droppableId);
+        // cardStore.notifyCardUpdated(draggableId, source.droppableId);
+        onRefreshData();
+      }).catch(error => {
+        console.error("Card reorder failed, fetching fresh data...", error);
+        onRefreshData();
       });
     }
     else {
@@ -84,14 +90,18 @@ const DragAndDropHandler: React.FC<DragAndDropHandlerProps> = observer(({
 
       // Update the card's listId in CardStore
       cardModel.listId = destination.droppableId;
+      cardModel.pos = destination.index;
       cardStore.cardsMap.set(draggableId, cardModel);
 
       // Handle card moving between lists in CardStore API
-      moveCard(boardId, draggableId, source.droppableId, destination.droppableId, destination.index);
-
-      // Notify subscribers about the card update
-      cardStore.notifyCardUpdated(draggableId, source.droppableId);
-      cardStore.notifyCardUpdated(draggableId, destination.droppableId);
+      moveCard(boardId, draggableId, source.droppableId, destination.droppableId, destination.index).then
+      (() => {
+          onRefreshData();
+        })
+        .catch(error => {
+          console.error("Card move failed, fetching fresh data...", error);
+          onRefreshData();
+        });
     }
   }, [boardId, cardStore, listStore, onRefreshData, reorderLists, reorderCardsInList, moveCard]);
 

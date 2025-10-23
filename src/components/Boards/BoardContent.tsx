@@ -89,7 +89,7 @@ const BoardContent: React.FC<BoardContentProps> = observer(({
                       >
                         {lists.map((list, index) => (
                           <Draggable key={list.id} draggableId={list.id} index={index}>
-                            {(provided, snapshot) => (
+                            {(provided) => (
                               <div
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}

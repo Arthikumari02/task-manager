@@ -43,10 +43,10 @@ const SearchBar: React.FC<SearchBarProps> = observer(({
               console.error('SearchBar: Error triggering search:', error);
             }
           });
+          // setShowSearchResults(true);
         } catch (error) {
           console.error('SearchBar: Error triggering search:', error);
         }
-        setShowSearchResults(true);
       }, 200); // Reduced debounce time for more responsive search
     } else {
       clearSearch();

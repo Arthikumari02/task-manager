@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { CardModel } from "../../models";
 import { getAuthData } from "../../utils/auth";
-import { useCardsStore } from "../../contexts";
+import { useCardsStore , useListsStore} from "../../contexts";
 
 interface FetchCardsOptions {
     onSuccess?: (cards: CardModel[]) => void;
@@ -11,6 +11,7 @@ interface FetchCardsOptions {
 
 export const useFetchCards = () => {
     const cardsStore = useCardsStore();
+    const listsStore = useListsStore();
     const [isFetching, setIsFetching] = useState(false);
 
     const fetchCards = async (listId: string, boardIdOrOptions: string | FetchCardsOptions, options?: FetchCardsOptions): Promise<void> => {
@@ -49,8 +50,11 @@ export const useFetchCards = () => {
             }
 
             const trelloCards = await response.json();
+            const openListIds = new Set(listsStore.getListsForBoard(boardId).map(list => list.id));
 
-            const cardModels = trelloCards.map((card: any) => {
+            const cardModels = trelloCards
+            .filter((card: any) => openListIds.has(card.idList))
+            .map((card: any) => {
                 const cardModel = new CardModel({
                     id: card.id,
                     name: card.name,

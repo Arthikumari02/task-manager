@@ -10,16 +10,21 @@ import { useUpdateBoardName } from '../../hooks/APIs/UpdateBoardName'
 import { useFetchLists } from '../../hooks/APIs/FetchLists'
 import { useFetchCards } from '../../hooks/APIs/FetchCards';
 import { useFetchBoards } from '../../hooks/APIs/FetchBoards';
+import { useBoardsStore } from "../../contexts";
+import { runInAction } from 'mobx';
+
 
 const BoardViewContent: React.FC<{ boardId: string }> = observer(({ boardId }) => {
 
   const organizationsStore = useOrganizationsStore();
   const { currentOrganization } = organizationsStore;
+  const { getBoardById } = useBoardsStore();
 
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [showNewListInput, setShowNewListInput] = useState(false);
   const [boardName, setBoardName] = useState('');
+  
 
   // Initialize hooks at the component level
   const { fetchLists } = useFetchLists();
@@ -31,16 +36,6 @@ const BoardViewContent: React.FC<{ boardId: string }> = observer(({ boardId }) =
 
   useEffect(() => {
     if (!boardId) return;
-
-    const isPageReload = !loadedBoardRef.current;
-    const isSameBoard = loadedBoardRef.current === boardId;
-
-    if (!isPageReload && isSameBoard) {
-      console.log(`Board ${boardId} data already loaded in this session, skipping fetch`);
-      setIsLoading(false); // Ensure loading state is reset
-      return;
-    }
-
     const loadData = async () => {
       setIsLoading(true);
 
@@ -62,11 +57,16 @@ const BoardViewContent: React.FC<{ boardId: string }> = observer(({ boardId }) =
           onError: (error) => {
             console.error(`Error loading board details: ${error}`);
           }
-        });
-
-        // Now fetch lists and cards
+        }); 
         await fetchLists(boardId, {
           onSuccess: async (lists) => {
+            const boardModel = getBoardById(boardId);
+            if (boardModel) {
+              runInAction(() => {
+                boardModel.clearListIds();
+                lists.forEach(list => boardModel.addListId(list.id)); 
+              });
+            }
             await fetchCards(boardId, {
               onSuccess: () => {
                 loadedBoardRef.current = boardId;
@@ -88,9 +88,8 @@ const BoardViewContent: React.FC<{ boardId: string }> = observer(({ boardId }) =
         setIsLoading(false);
       }
     };
-
     loadData();
-  }, [boardId, fetchBoards, fetchLists, fetchCards]);
+  }, [boardId, currentOrganization]);
 
   // Track initial load completion
   useEffect(() => {
@@ -109,26 +108,19 @@ const BoardViewContent: React.FC<{ boardId: string }> = observer(({ boardId }) =
     setShowNewListInput(false);
   };
 
-  const handleTaskAdded = async () => {
-    if (!boardId) return;
-
-    // Force a quick UI refresh
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 100);
-  };
-
   const handleBoardNameChange = async (newName: string) => {
     if (boardId) {
       await updateBoardName(boardId, newName, {
         onSuccess: () => {
-          // Update local state
+          const boardModel = getBoardById(boardId);
+          if (boardModel) {
+            runInAction(() => {
+              boardModel.name = newName; 
+            });
+          }
           setBoardName(newName);
-          // Refresh the board data
-          handleTaskAdded();
         },
-        onError: (error: string) => {
+        onError: (error) => {
           console.error('Error updating board name:', error);
         }
       });

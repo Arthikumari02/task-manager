@@ -22,6 +22,7 @@ const Dashboard: React.FC = observer(() => {
   const { fetchUserInfo } = useAuthStore();
   const fetchOrganizations = useFetchOrganizations();
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     // Always fetch user info on mount
     if (fetchUserInfo) {
@@ -45,6 +46,7 @@ const Dashboard: React.FC = observer(() => {
   // Track the last organization ID we fetched boards for
   const lastFetchedOrgIdRef = useRef<string | null>(null);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const loadBoardsData = async () => {
       if (currentOrganization) {
@@ -55,7 +57,7 @@ const Dashboard: React.FC = observer(() => {
     };
 
     loadBoardsData();
-  }, [currentOrganization, fetchBoards]);
+  }, [currentOrganization]);
 
   const handleBoardClick = (boardId: string) => {
     navigate(`/board/${boardId}`);

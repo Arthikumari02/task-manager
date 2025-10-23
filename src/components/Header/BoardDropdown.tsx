@@ -24,19 +24,13 @@ const BoardDropdown: React.FC<BoardDropdownProps> = observer(({
   // Handle board selection directly in the component
   const handleBoardSelect = async (boardId: string) => {
     try {
-      // Set the current board in the store first
       if (setCurrentBoard) {
         await setCurrentBoard(boardId);
       }
-
-      setTimeout(() => {
-        // Navigate to the board - BoardView component will handle loading the data
-        navigate(`/board/${boardId}`);
-        onToggle(); // Close dropdown after selection
-      }, 100);
+      onToggle();
+      navigate(`/board/${boardId}`);
     } catch (error) {
       console.error('Error selecting board:', error);
-      // Still navigate even if there's an error
       navigate(`/board/${boardId}`);
       onToggle();
     }
