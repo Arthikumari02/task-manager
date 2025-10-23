@@ -5,6 +5,8 @@ import { useListsStore, useCardsStore } from '../../contexts';
 import { useReorderLists } from '../../hooks/APIs/ReorderLists';
 import { useMoveCard } from '../../hooks/APIs/MoveCard';
 import { useReorderCardsInList } from '../../hooks/APIs/ReorderCardsInList';
+import { useBoardsStore } from '../../contexts';
+import { runInAction } from 'mobx';
 
 interface DragAndDropHandlerProps {
   boardId: string;
@@ -25,6 +27,7 @@ const DragAndDropHandler: React.FC<DragAndDropHandlerProps> = observer(({
   const reorderLists = useReorderLists();
   const reorderCardsInList = useReorderCardsInList();
   const { moveCard } = useMoveCard();
+  const boardsStore = useBoardsStore();
 
   const handleDragEnd = useCallback((result: DropResult) => {
     const { destination, source, type, draggableId } = result;
@@ -36,14 +39,24 @@ const DragAndDropHandler: React.FC<DragAndDropHandlerProps> = observer(({
     if (destination.droppableId === source.droppableId && destination.index === source.index) {
       return;
     }
-    if (type === 'list') { reorderLists(boardId, source.index, destination.index) .then(() => 
-      { 
-        onRefreshData(); 
-      }) .catch(
-        error => { console.error("List reorder failed:", error); onRefreshData(); 
-
-      }); 
-      return; 
+    if (type === 'list') {
+      const board = boardsStore.getBoardById(boardId);
+      if (board) {
+        // Optimistic update
+        const listIds = [...board.listIds];
+        const [moved] = listIds.splice(source.index, 1);
+        listIds.splice(destination.index, 0, moved);
+    
+        runInAction(() => {
+          board.listIds = listIds;
+        });
+      }
+    
+      reorderLists(boardId, source.index, destination.index)
+        .then(() => onRefreshData())
+        .catch(error => { console.error(error); onRefreshData(); });
+    
+      return;
     }
     if (source.droppableId === destination.droppableId) {
       const cardModel = cardStore.getCardById(draggableId);
