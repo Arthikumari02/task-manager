@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useSearchStore } from '../../contexts/SearchContext';
 import { useSearch } from '../../hooks/APIs/PerformSearch';
@@ -28,39 +28,43 @@ const SearchBar: React.FC<SearchBarProps> = observer(({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const mobileSearchInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [localQuery, setLocalQuery] = useState(searchQuery);
+  const isInitialMount = useRef(true);
 
-  // Real-time search with debounce
+
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    if (!localQuery.trim()) {
+      clearSearch();
+      setShowSearchResults(false);
+      setSearchQuery('');
+      return;
+    }
+  
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
-
-    if (searchQuery.trim()) {
-      searchTimeoutRef.current = setTimeout(() => {
-        try {
-          performSearch(searchQuery, {
-            onError: (error) => {
-              console.error('SearchBar: Error triggering search:', error);
-            }
-          });
-          // setShowSearchResults(true);
-        } catch (error) {
-          console.error('SearchBar: Error triggering search:', error);
-        }
-      }, 200); // Reduced debounce time for more responsive search
-    } else {
-      clearSearch();
-      setShowSearchResults(false);
-    }
-
+  
+    searchTimeoutRef.current = setTimeout(() => {
+      setSearchQuery(localQuery); 
+      performSearch(localQuery, {
+        onError: (error) => console.error('SearchBar: Error triggering search:', error)
+      });
+      
+      setShowSearchResults(true);
+    }, 300); 
+  
     return () => {
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [searchQuery, performSearch, clearSearch, setShowSearchResults]);
-
-  // Close search results when clicking outside
+  }, [localQuery, performSearch, clearSearch, setSearchQuery, setShowSearchResults]);
+  
+    // Close search results when clicking outside
   useEffect(() => {
     if (!showSearchResults) return;
 
@@ -94,23 +98,11 @@ const SearchBar: React.FC<SearchBarProps> = observer(({
 
   const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setSearchQuery(value);
-
-    // Show results immediately if there's a query
-    if (value.trim()) {
-      setShowSearchResults(true);
-    } else {
-      setShowSearchResults(false);
-    }
-  };
-
-  const handleSearchInputFocus = () => {
-    if (searchQuery.trim()) {
-      setShowSearchResults(true);
-    }
+    setLocalQuery(value);
   };
 
   const handleClearSearch = () => {
+    setLocalQuery('');
     setSearchQuery('');
     clearSearch();
     setShowSearchResults(false);
@@ -128,7 +120,7 @@ const SearchBar: React.FC<SearchBarProps> = observer(({
                   <input
                     ref={mobileSearchInputRef}
                     type="text"
-                    value={searchQuery}
+                    value={localQuery} 
                     onChange={handleSearchInputChange}
                     placeholder="Search"
                     className="block w-full pl-3 pr-10 py-2 border border-gray-200 rounded text-sm bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-opacity-50 shadow-sm transition-all duration-200"
@@ -179,13 +171,12 @@ const SearchBar: React.FC<SearchBarProps> = observer(({
           <input
             ref={searchInputRef}
             type="text"
-            value={searchQuery}
+            value={localQuery} 
             onChange={handleSearchInputChange}
-            onFocus={handleSearchInputFocus}
             placeholder="Search cards or boards"
             className="block w-32 sm:w-48 pl-10 pr-8 py-1.5 border-0 rounded text-sm bg-[#4E97C2] placeholder-white text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 transition-all duration-200"
           />
-          {searchQuery && (
+          {localQuery  && (
             <button
               type="button"
               onClick={handleClearSearch}
@@ -198,7 +189,7 @@ const SearchBar: React.FC<SearchBarProps> = observer(({
       </form>
 
       {/* Desktop Search Results Dropdown */}
-      {showSearchResults && (searchQuery.trim() || hasResults) && (
+      {showSearchResults && (localQuery .trim() || hasResults) && (
         <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-96 overflow-y-auto z-[100] w-64 sm:w-80">
           <SearchResults />
         </div>
@@ -219,13 +210,13 @@ const SearchBar: React.FC<SearchBarProps> = observer(({
                     <input
                       ref={mobileSearchInputRef}
                       type="text"
-                      value={searchQuery}
+                      value={localQuery} 
                       onChange={handleSearchInputChange}
                       placeholder="Search"
                       className="block w-full pl-3 pr-10 py-2 border border-gray-200 rounded text-sm bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-opacity-50 shadow-sm transition-all duration-200"
                       autoFocus
                     />
-                    {searchQuery && (
+                    {localQuery  && (
                       <button
                         type="button"
                         onClick={handleClearSearch}
