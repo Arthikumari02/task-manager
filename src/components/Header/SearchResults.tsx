@@ -6,13 +6,13 @@ import { useSearchStore } from '../../contexts/SearchContext';
 import Loading from '../Loading';
 
 const SearchResults: React.FC = observer(() => {
-    const { searchCards, isSearching, hasResults, searchError } = useSearchStore();
+    const { searchCards, isSearching, searchQuery, searchError } = useSearchStore();
     const navigate = useNavigate();
 
     const handleTaskClick = (taskId: string, boardId: string) => {
         navigate(`/board/${boardId}`);
     };
-
+    
     if (isSearching) {
         return (
             <div className="flex items-center justify-center p-6">
@@ -32,7 +32,7 @@ const SearchResults: React.FC = observer(() => {
         );
     }
 
-    if (!hasResults) {
+    if (!searchCards.length) {
         return (
             <div className="flex items-center justify-center p-6 min-h-[200px]">
                 <div className="text-center">

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { CardModel } from "../../models";
 import { getAuthData } from "../../utils/auth";
 import { useCardsStore } from "../../contexts";
+import { useSearchStore } from "../../contexts/SearchContext";
 
 interface SearchOptions {
     onSuccess?: (cards: CardModel[]) => void;
@@ -10,20 +11,19 @@ interface SearchOptions {
 }
 
 export const useSearch = () => {
-    const cardsStore = useCardsStore();
+    const searchStore = useSearchStore();
     const [isSearching, setIsSearching] = useState(false);
     
     const performSearch = async (query: string, options?: SearchOptions): Promise<CardModel[]> => {
         const { token, clientId } = getAuthData();
         if (!token || !clientId || !query.trim()) {
-            cardsStore.setLoading(false);
-            cardsStore.setError(null);
+            searchStore.setIsLoading(false); 
+            searchStore.setSearchError(null);
             return [];
         }
 
         setIsSearching(true);
-        cardsStore.setLoading(true);
-        cardsStore.setError(null);
+        searchStore.setIsLoading(true);
 
         try {
             const response = await fetch(
@@ -35,7 +35,6 @@ export const useSearch = () => {
             }
 
             const data = await response.json();
-
             // Filter out closed cards and map to CardModel format
             const cards: CardModel[] = (data.cards || [])
                 .filter((card: any) => !card.closed)
@@ -49,13 +48,10 @@ export const useSearch = () => {
                     boardId: card.idBoard,
                     url: card.url || ''
                 }));
-
-            // Update the cards in the store
-            cards.forEach(card => {
-                cardsStore.addCard(card);
-            });
-            cardsStore.setLoading(false);
-
+            
+            searchStore.setSearchResults(cards); 
+            searchStore.setSearchError(null);
+            
             if (options?.onSuccess) {
                 options.onSuccess(cards);
             }
@@ -66,9 +62,8 @@ export const useSearch = () => {
             console.error('Error searching cards:', error);
             const errorMessage = error instanceof Error ? error.message : 'Failed to search cards';
             
-            cardsStore.setError(errorMessage);
-            cardsStore.setLoading(false);
-            
+            searchStore.setSearchError(errorMessage);
+
             if (options?.onError) {
                 options.onError(errorMessage);
             }
@@ -76,6 +71,7 @@ export const useSearch = () => {
             return [];
         } finally {
             setIsSearching(false);
+            searchStore.setIsLoading(false);
         }
     };
     
