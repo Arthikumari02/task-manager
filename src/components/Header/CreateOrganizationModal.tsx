@@ -34,15 +34,15 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = observer
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50">
       {/* Desktop: Center modal */}
       <div className="sm:hidden md:flex items-center justify-center min-h-screen">
-        <div className="bg-white rounded-sm shadow-xl max-w-sm w-full mx-4 animate-in fade-in zoom-in duration-200">
+        <div className="bg-white rounded-sm shadow-xl max-w-sm w-full p-3 animate-in fade-in zoom-in duration-200">
           {/* Modal Header */}
           <div className="flex items-center justify-between p-4">
             <div></div>
             <button
               onClick={handleClose}
-              className="text-black hover:text-gray-200 transition-colors duration-200"
+              className="text-red hover:text-gray-200 font-bold"
             >
-              Create New Organization
+              x
             </button>
           </div>
 
