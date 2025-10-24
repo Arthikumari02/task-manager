@@ -22,13 +22,15 @@ const BoardDropdown: React.FC<BoardDropdownProps> = observer(({
   const { currentOrganizationBoards, isLoading: isLoadingBoards, setCurrentBoard } = boardStore;
 
   // Handle board selection directly in the component
-  const handleBoardSelect = async (boardId: string) => {
+  const handleBoardSelect = (boardId: string) => {
     try {
+      console.log('Selecting board:', boardId);
       if (setCurrentBoard) {
-        await setCurrentBoard(boardId);
+        setCurrentBoard(boardId);
       }
-      onToggle();
+      console.log('Selecting board:', boardId);
       navigate(`/board/${boardId}`);
+      onToggle();
     } catch (error) {
       console.error('Error selecting board:', error);
       navigate(`/board/${boardId}`);
@@ -87,8 +89,9 @@ const BoardDropdown: React.FC<BoardDropdownProps> = observer(({
         {/* Mobile dropdown (bottom sheet) */}
         {isOpen && (
           <>
-            <div className="fixed inset-0 z-40 md:hidden bg-black bg-opacity-50" onClick={onToggle} />
-            <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white shadow-2xl max-h-[80vh] overflow-hidden">
+            <div className="fixed inset-0 z-40 md:hidden bg-black bg-opacity-50" onClick={onToggle}    style={{ pointerEvents: 'auto' }}
+            />
+            <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white shadow-2xl max-h-[80vh] overflow-hidden"  onClick={(e) => e.stopPropagation()}>
               {/* Header with title and close button */}
               <div className="flex justify-center border-b border-gray-200 py-3 relative">
                 <h2 className="text-md text-gray-700 font-medium">Your Workspace boards</h2>
@@ -107,7 +110,10 @@ const BoardDropdown: React.FC<BoardDropdownProps> = observer(({
                     currentOrganizationBoards.map((board) => (
                       <button
                         key={board.id}
-                        onClick={() => handleBoardSelect(board.id)}
+                        onClick={() => {
+                          console.log('Clicked board:', board.id);
+                         handleBoardSelect(board.id)}}
+                         onTouchStart={() => handleBoardSelect(board.id)}
                         className="w-full text-left px-4 py-3 text-base text-blue-600 hover:bg-gray-50 flex items-center space-x-3"
                       >
                         <span className="font-medium">{board.name}</span>

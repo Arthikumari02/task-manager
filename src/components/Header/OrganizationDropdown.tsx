@@ -91,6 +91,7 @@ const OrganizationDropdown: React.FC<OrganizationDropdownProps> = observer(({
                     <button
                       key={org.id}
                       onClick={() => handleOrganizationChange(org)}
+                      onTouchStart={() => handleOrganizationChange(org)}
                       className={`w-full text-left px-4 py-3 text-base hover:bg-gray-50 flex items-center space-x-3 rounded-lg ${currentOrganization?.id === org.id ? 'bg-blue-50 text-blue-600' : 'text-gray-700'}`}
                     >
                       <div className={`w-6 h-6 rounded ${currentOrganization?.id === org.id ? 'bg-blue-500' : 'bg-blue-500'}`}></div>
