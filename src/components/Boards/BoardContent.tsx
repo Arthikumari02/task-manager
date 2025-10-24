@@ -13,7 +13,7 @@ import TaskModalHandler from './TaskModalHandler';
 interface BoardContentProps {
   boardId: string;
   showNewListInput: boolean;
-  onListAdded: () => void;
+  onHideAddListForm: () => void;
   onCancelAddList: () => void;
   onShowAddListForm: () => void;
 }
@@ -21,7 +21,7 @@ interface BoardContentProps {
 const BoardContent: React.FC<BoardContentProps> = observer(({
   boardId,
   showNewListInput,
-  onListAdded,
+  onHideAddListForm,
   onCancelAddList,
   onShowAddListForm
 }) => {
@@ -31,24 +31,24 @@ const BoardContent: React.FC<BoardContentProps> = observer(({
   const [dataLoaded, setDataLoaded] = useState(false);
   const [listsUpdateCounter, setListsUpdateCounter] = useState(0);
 
-  // Refresh lists when needed
   const refreshLists = useCallback(() => {
     setListsUpdateCounter(prev => prev + 1);
   }, []);
 
-  // Create a refresh function to update data
   const refreshData = useCallback(() => {
-    onListAdded();
+    onHideAddListForm();
 
-    // Force lists to update
     refreshLists();
 
-    // Force re-fetch of lists and cards to ensure UI updates
     listStore.getListsForBoard(boardId);
     cardStore.getCardsForBoard(boardId);
-  }, [boardId, listStore, cardStore, onListAdded, refreshLists]);
+  }, [boardId, listStore, cardStore, onHideAddListForm, refreshLists]);
 
-  // Get lists from store
+  const handleListCreationSuccess = useCallback(() => {
+    refreshData();    
+    onHideAddListForm();
+}, [refreshData, onHideAddListForm]);
+
   const getLists = useCallback(() => {
     const lists = listStore.getListsForBoard(boardId);
     return lists.filter(list => !list.closed);
@@ -56,7 +56,6 @@ const BoardContent: React.FC<BoardContentProps> = observer(({
 
   const lists = useMemo(() => getLists(), [getLists]);
 
-  // Handle data loading state
   const handleDataLoaded = useCallback((isLoaded: boolean) => {
     setDataLoaded(isLoaded);
   }, []);
@@ -110,7 +109,7 @@ const BoardContent: React.FC<BoardContentProps> = observer(({
                           <div className="h-full w-72 shrink-0 select-none">
                             <AddListForm
                               boardId={boardId}
-                              onListAdded={onListAdded}
+                              onListAdded={handleListCreationSuccess}
                               onCancel={onCancelAddList}
                             />
                           </div>

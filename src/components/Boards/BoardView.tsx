@@ -143,7 +143,7 @@ const BoardViewContent: React.FC<{ boardId: string }> = observer(({ boardId }) =
         <BoardContent
           boardId={boardId}
           showNewListInput={showNewListInput}
-          onListAdded={handleListAdded}
+          onHideAddListForm={handleListAdded}
           onCancelAddList={handleCancelAddList}
           onShowAddListForm={() => setShowNewListInput(true)}
         />
