@@ -168,23 +168,23 @@ const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onT
   .sort((a, b) => (a.pos || 0) - (b.pos || 0)) || [];
 
 
-  const handleDeleteCard = (cardId: string) => {
-    const card = cardsStore.getCardById(cardId);
-    if (!card) return;
+  // const handleDeleteCard = (cardId: string) => {
+  //   const card = cardsStore.getCardById(cardId);
+  //   if (!card) return;
   
-    const list = getListById(card.listId);
-    if (list) {
-      runInAction(() => {
-        const index = list.cardIdsList.indexOf(cardId);
-        if (index > -1) list.cardIdsList.splice(index, 1); // MobX observable update
-      });
-    }
+  //   const list = getListById(card.listId);
+  //   if (list) {
+  //     runInAction(() => {
+  //       const index = list.cardIdsList.indexOf(cardId);
+  //       if (index > -1) list.cardIdsList.splice(index, 1); // MobX observable update
+  //     });
+  //   }
   
-    runInAction(() => {
-      cardsStore.removeCard(cardId); // observable map/array
-    });
+  //   runInAction(() => {
+  //     cardsStore.removeCard(cardId); // observable map/array
+  //   });
   
-  };
+  // };
   
 
   // If listModel is null, render a placeholder
@@ -243,7 +243,6 @@ const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onT
                 index={index}
                 onTaskRename={handleTaskRename}
                 onTaskClick={handleTaskClick}
-                onTaskDelete={handleDeleteCard}
               />
             ))}
             {provided.placeholder}

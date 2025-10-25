@@ -1,12 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
-import { useCardsStore } from '../../contexts';
+import { useListsStore, useCardsStore } from '../../contexts';
 import { TrelloCard } from '../../types';
 import TaskModal from './TaskModal';
 import { useRenameCard } from '../../hooks/APIs/RenameCard'
 import { useUpdateCardDescription } from '../../hooks/APIs/UpdateCardDescription'
 import { useDeleteCard } from '../../hooks/APIs/DeleteCard'
 import { useAddComment } from '../../hooks/APIs/AddComment'
+import {runInAction} from 'mobx'
 
 interface TaskModalHandlerProps {
   boardId: string;
@@ -18,9 +19,6 @@ interface TaskModalHandlerProps {
   ) => React.ReactNode;
 }
 
-/**
- * Component responsible for handling task modal operations
- */
 const TaskModalHandler: React.FC<TaskModalHandlerProps> = observer(({
   boardId,
   onRefreshData,
@@ -28,8 +26,7 @@ const TaskModalHandler: React.FC<TaskModalHandlerProps> = observer(({
   children
 }) => {
   const cardStore = useCardsStore();
-  
-  // Initialize hooks at the component level
+  const listStore = useListsStore();
   const { renameCard } = useRenameCard();
   const { updateCardDescription } = useUpdateCardDescription();
   const { deleteCard } = useDeleteCard();
@@ -51,10 +48,24 @@ const TaskModalHandler: React.FC<TaskModalHandlerProps> = observer(({
   }, [updateCardDescription, onRefreshData]);
 
   const handleDeleteCard = useCallback(async (cardId: string) => {
-    await deleteCard(cardId, {
-      onSuccess: () => onRefreshData()
-    });
-  }, [deleteCard, onRefreshData]);
+     const card = cardStore.getCardById(cardId);
+     if (!card) return;
+    const listId = card.listId; 
+     runInAction(() => {
+      const list = listStore.getListById(listId);
+     if (list) {
+     const index = list.cardIdsList.indexOf(cardId);
+     if (index > -1) list.cardIdsList.splice(index, 1);
+    }
+    cardStore.removeCard(cardId); 
+    });    
+    try {
+      await deleteCard(cardId, {
+    onSuccess: () => onRefreshData()});
+    } catch (error) {
+    console.error("Failed to delete card:", error);onRefreshData();
+    }
+  }, [deleteCard, onRefreshData, cardStore, listStore]);
 
   const handleAddComment = useCallback(async (cardId: string, comment: string) => {
     await addComment(cardId, comment, {

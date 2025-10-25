@@ -71,8 +71,16 @@ class CardStore {
     this.cardsMap.set(card.id, card);
   };
 
-  removeCard = (cardId: string) => {
+  removeCard = (cardId: string, listId?: string) => {
+    let final_listId = listId;
+    if (!final_listId) {
+        const card = this.cardsMap.get(cardId);
+        final_listId = card?.listId;
+    }
     this.cardsMap.delete(cardId);
+    if (final_listId) {
+        this.notifyCardUpdated(cardId, final_listId);
+    }
   };
 
   updateLastFetchTime = (listId: string, timestamp: number) => {

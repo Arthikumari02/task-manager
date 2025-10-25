@@ -4,7 +4,7 @@ import { Draggable } from '@hello-pangea/dnd';
 import { TaskCardProps } from '../../types';
 import { useCardsStore } from '../../contexts';
 
-const TaskCard: React.FC<TaskCardProps> = observer(({ id, index, onTaskRename, onTaskClick, onTaskDelete }) => {
+const TaskCard: React.FC<TaskCardProps> = observer(({ id, index, onTaskRename, onTaskClick }) => {
   const { getCardById } = useCardsStore();
   const card = getCardById(id);
 
