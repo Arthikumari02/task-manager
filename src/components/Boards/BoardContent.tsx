@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { useListsStore, useCardsStore } from '../../contexts';
+import { useListsStore, useCardsStore, useBoardsStore } from '../../contexts';
 import BoardList from './BoardList';
 import AddListForm from './AddListForm';
 import EmptyBoardState from './EmptyBoardState';
@@ -9,6 +9,7 @@ import AddListButton from './AddListButton';
 import BoardDataLoader from './BoardDataLoader';
 import DragAndDropHandler from './DragAndDropHandler';
 import TaskModalHandler from './TaskModalHandler';
+import { ListModel } from '../../models/ListModel';
 
 interface BoardContentProps {
   boardId: string;
@@ -27,40 +28,49 @@ const BoardContent: React.FC<BoardContentProps> = observer(({
 }) => {
   const listStore = useListsStore();
   const cardStore = useCardsStore();
-
+  const boardsStore = useBoardsStore();
   const [dataLoaded, setDataLoaded] = useState(false);
-  const [listsUpdateCounter, setListsUpdateCounter] = useState(0);
+  // const [listsUpdateCounter, setListsUpdateCounter] = useState(0);
 
-  const refreshLists = useCallback(() => {
-    setListsUpdateCounter(prev => prev + 1);
-  }, []);
+  // const refreshLists = useCallback(() => {
+  //   setListsUpdateCounter(prev => prev + 1);
+  // }, []);
 
   const refreshData = useCallback(() => {
     onHideAddListForm();
 
-    refreshLists();
+    //  refreshLists();
 
     listStore.getListsForBoard(boardId);
     cardStore.getCardsForBoard(boardId);
-  }, [boardId, listStore, cardStore, onHideAddListForm, refreshLists]);
+  }, [boardId, listStore, cardStore, onHideAddListForm]);
 
   const handleListCreationSuccess = useCallback(() => {
     refreshData();    
     onHideAddListForm();
 }, [refreshData, onHideAddListForm]);
 
-  const getLists = useCallback(() => {
-    const lists = listStore.getListsForBoard(boardId);
-    return lists.filter(list => !list.closed);
-  }, [boardId, listStore, listsUpdateCounter]);
-
-  const lists = useMemo(() => getLists(), [getLists]);
-
+// const getLists = useCallback(() => {
+//   const boardModel = boardsStore.getBoardById(boardId);
+//   if (!boardModel) return [];
+//   const orderedListIds = boardModel.listIds; 
+//       const orderedLists = orderedListIds
+//      .map(id => listStore.getListById(id))
+//      .filter((list): list is ListModel => !!list); 
+//     return orderedLists.filter(list => !list.closed);
+//    }, [boardId, listStore, boardsStore]);
+//   const lists = useMemo(() => getLists(), [getLists]);
   const handleDataLoaded = useCallback((isLoaded: boolean) => {
     setDataLoaded(isLoaded);
   }, []);
+const boardModel = boardsStore.getBoardById(boardId);
 
-  // Render empty state if no lists
+const lists = (boardModel?.listIds || [])
+  .map(id => listStore.getListById(id))
+  .filter((list): list is ListModel => !!list)
+  .filter(list => !list.closed);
+
+
   if (dataLoaded && lists.length === 0 && !showNewListInput) {
     return (
       <EmptyBoardState onAddFirstList={onShowAddListForm} />

@@ -40,22 +40,24 @@ const DragAndDropHandler: React.FC<DragAndDropHandlerProps> = observer(({
       return;
     }
     if (type === 'list') {
-      const board = boardsStore.getBoardById(boardId);
-      if (board) {
-        // Optimistic update
+       const board = boardsStore.getBoardById(boardId);
+       if (board) {
         const listIds = [...board.listIds];
-        const [moved] = listIds.splice(source.index, 1);
-        listIds.splice(destination.index, 0, moved);
-    
-        runInAction(() => {
-          board.listIds = listIds;
-        });
+       const [moved] = listIds.splice(source.index, 1);
+       listIds.splice(destination.index, 0, moved);
+       
+       runInAction(() => {
+       board.listIds = listIds;
+      });
       }
-    
       reorderLists(boardId, source.index, destination.index)
-        .then(() => onRefreshData())
-        .catch(error => { console.error(error); onRefreshData(); });
-    
+      .then(() => {
+        onRefreshData();
+    })
+    .catch(error => { 
+       console.error("DND Handler: API Failure. Refreshing data.", error);
+        onRefreshData(); 
+    });
       return;
     }
     if (source.droppableId === destination.droppableId) {
