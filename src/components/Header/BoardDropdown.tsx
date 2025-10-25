@@ -22,23 +22,29 @@ const BoardDropdown: React.FC<BoardDropdownProps> = observer(({
   const { currentOrganizationBoards, isLoading: isLoadingBoards, setCurrentBoard } = boardStore;
 
   // Handle board selection directly in the component
-  const handleBoardSelect = (boardId: string) => {
+  const handleBoardSelect = async (boardId: string) => {
     try {
       console.log('Selecting board:', boardId);
+      
       if (setCurrentBoard) {
-        setCurrentBoard(boardId);
+        await setCurrentBoard(boardId);
       }
-      console.log('Selecting board:', boardId);
-      navigate(`/board/${boardId}`);
-      onToggle();
+      navigate(`/board/${boardId}`, { 
+        state: { forceReload: true }, 
+        replace: true 
+      });
+      
+      setTimeout(() => onToggle(), 10);
     } catch (error) {
       console.error('Error selecting board:', error);
-      navigate(`/board/${boardId}`);
+      navigate(`/board/${boardId}`, { 
+        state: { forceReload: true },
+        replace: true 
+      });
       onToggle();
     }
   };
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     if (!isOpen) return;
 
@@ -55,22 +61,14 @@ const BoardDropdown: React.FC<BoardDropdownProps> = observer(({
     };
   }, [isOpen, onToggle]);
 
-  // State to track if we're on a mobile device
   const [isMobileDevice, setIsMobileDevice] = useState(isMobile);
 
-  // Update mobile detection on window resize
   useEffect(() => {
     const checkIfMobile = () => {
       setIsMobileDevice(window.innerWidth < 768 || isMobile);
     };
-
-    // Initial check
     checkIfMobile();
-
-    // Add event listener for window resize
     window.addEventListener('resize', checkIfMobile);
-
-    // Cleanup
     return () => window.removeEventListener('resize', checkIfMobile);
   }, [isMobile]);
 
