@@ -86,6 +86,7 @@ const lists = (boardModel?.listIds || [])
                                 {...provided.dragHandleProps}
                               >
                                 <BoardList
+                                  key={`${list.id}-${cardStore.cardCount}`}
                                   listId={list.id}
                                   onTaskAdded={refreshData}
                                   onTaskClick={handleTaskClick}

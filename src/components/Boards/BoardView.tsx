@@ -41,21 +41,21 @@ const BoardViewContent: React.FC<{ boardId: string }> = observer(({ boardId }) =
           onSuccess: (boards) => {
             if (!boards || boards.length === 0) {
               console.warn('No boards data returned');
-          } else if (!boards.find(board => board.id === boardId)) {
+            } else if (!boards.find(board => board.id === boardId)) {
               console.warn(`Board with ID ${boardId} not found in the response`);
-          }
+            }
           },
           onError: (error) => {
             console.error(`Error loading board details: ${error}`);
           }
-        }); 
+        });
         await fetchLists(boardId, {
           onSuccess: async (lists) => {
             const boardModel = getBoardById(boardId);
             if (boardModel) {
               runInAction(() => {
                 boardModel.clearListIds();
-                lists.forEach(list => boardModel.addListId(list.id)); 
+                lists.forEach(list => boardModel.addListId(list.id));
               });
             }
             await fetchCards(boardId, {
@@ -98,32 +98,32 @@ const BoardViewContent: React.FC<{ boardId: string }> = observer(({ boardId }) =
     setShowNewListInput(false);
   };
 
-const handleBoardNameChange = async (newName: string) => {
-  if (boardId) {
+  const handleBoardNameChange = async (newName: string) => {
+    if (boardId) {
       const boardModel = getBoardById(boardId);
-      const originalName = boardModel?.name; 
-      
+      const originalName = boardModel?.name;
+
       if (boardModel) {
-          runInAction(() => {
-              boardModel.name = newName;
-          });
+        runInAction(() => {
+          boardModel.name = newName;
+        });
       }
-      
+
       await updateBoardName(boardId, newName, {
-          onSuccess: () => {
-          },
-          onError: (error) => {
-              console.error('Error updating board name:', error);
-              
-              if (boardModel && originalName) {
-                  runInAction(() => {
-                      boardModel.name = originalName;
-                  });
-              }
+        onSuccess: () => {
+        },
+        onError: (error) => {
+          console.error('Error updating board name:', error);
+
+          if (boardModel && originalName) {
+            runInAction(() => {
+              boardModel.name = originalName;
+            });
           }
+        }
       });
-  }
-};
+    }
+  };
 
   return (
     <main className="w-full overflow-x-auto px-2 sm:px-4 py-4 sm:py-6">
@@ -155,7 +155,7 @@ const BoardView: React.FC = observer(() => {
   const { boardId = '' } = useParams<{ boardId: string }>();
 
   return (
-    <div className="min-h-screen bg-[#0079BF]">
+    <div className="min-h-screen bg-[#0079BF]" key={boardId}>
       <Header
         title="Task Manager"
         currentPage="boards"

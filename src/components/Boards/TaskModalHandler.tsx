@@ -48,22 +48,40 @@ const TaskModalHandler: React.FC<TaskModalHandlerProps> = observer(({
   }, [updateCardDescription, onRefreshData]);
 
   const handleDeleteCard = useCallback(async (cardId: string) => {
-     const card = cardStore.getCardById(cardId);
-     if (!card) return;
-    const listId = card.listId; 
-     runInAction(() => {
+    const card = cardStore.getCardById(cardId);
+    if (!card) return;
+    
+    const listId = card.listId;
+    
+    // Optimistic update: remove the card from the list immediately
+    runInAction(() => {
       const list = listStore.getListById(listId);
-     if (list) {
-     const index = list.cardIdsList.indexOf(cardId);
-     if (index > -1) list.cardIdsList.splice(index, 1);
-    }
-    cardStore.removeCard(cardId); 
-    });    
+      if (list) {
+        const index = list.cardIdsList.indexOf(cardId);
+        if (index > -1) {
+          list.cardIdsList.splice(index, 1);
+        }
+      }
+      // Remove the card from the store
+      cardStore.removeCard(cardId, listId);
+    });
+    
+    // Make the API call to delete the card
     try {
       await deleteCard(cardId, {
-    onSuccess: () => onRefreshData()});
+        onSuccess: () => {
+          // Force a re-render of the list to ensure UI is in sync
+          onRefreshData();
+        },
+        onError: (error) => {
+          console.error("Failed to delete card:", error);
+          // If the API call fails, refresh data to revert any optimistic updates
+          onRefreshData();
+        }
+      });
     } catch (error) {
-    console.error("Failed to delete card:", error);onRefreshData();
+      console.error("Error in delete card:", error);
+      onRefreshData();
     }
   }, [deleteCard, onRefreshData, cardStore, listStore]);
 
