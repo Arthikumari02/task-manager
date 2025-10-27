@@ -2,7 +2,7 @@ import { Droppable } from '@hello-pangea/dnd';
 import { observer } from 'mobx-react-lite';
 import React, { useCallback, useState } from 'react';
 import Icon from '../../assets/icons';
-import { useCardsStore, useListsStore } from '../../contexts';
+import { useCardsStore, useListsStore, useBoardsStore } from '../../contexts';
 import { useUpdateList } from '../../hooks/APIs/UpdateList';
 import { useRenameCard } from '../../hooks/APIs/RenameCard';
 import { useCloseList } from '../../hooks/APIs/CloseList';
@@ -21,9 +21,11 @@ interface BoardListProps {
 const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onTaskClick }) => {
   const { getListById } = useListsStore();
   const { updateList } = useUpdateList();
-  const {closeList} = useCloseList();
-  const {renameCard} = useRenameCard();
+  const { closeList } = useCloseList();
+  const { renameCard } = useRenameCard();
   const { getCardById, isCreatingInList } = useCardsStore();
+  const { setListClosed } = useListsStore();
+  const { getBoardById } = useBoardsStore();
 
   const listModel = getListById(listId);
 
@@ -94,22 +96,26 @@ const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onT
   }, []);
 
   const handleCloseList = useCallback(() => {
-    if (listModel) {
-      closeList(listModel.id)
+    if (!listModel) return;
+
+    const listId = listModel.id;
+    const boardId = listModel.boardId;
+
+    closeList(listId)
       .then(() => {
-          if (onTaskAdded) { 
-              onTaskAdded(); 
+        runInAction(() => {
+          setListClosed(listId, true);
+
+          const boardModel = getBoardById(boardId);
+          if (boardModel) {
+            boardModel.removeListId(listId);
           }
+        });
       })
       .catch(error => {
-          console.error("Failed to close list:", error);
-          // Refresh on error to get the current state
-          if (onTaskAdded) { 
-              onTaskAdded(); 
-          }
+        console.error("Failed to close list:", error);
       });
-    }
-  }, [listModel, onTaskAdded, closeList]);
+  }, [listModel, closeList, setListClosed, getBoardById]);
 
   const handleShowAddTaskForm = useCallback(() => {
     setShowAddTaskForm(true);
@@ -138,8 +144,8 @@ const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onT
   }, [onTaskClick]);
 
   const listCards: CardModel[] = listModel?.cardIdsList
-  .map(id => getCardById(id))
-  .filter((c): c is CardModel => !!c)|| [];
+    .map(id => getCardById(id))
+    .filter((c): c is CardModel => !!c) || [];
 
   if (!listModel) {
     return <div className="bg-[#F4F5F7] rounded-sm px-3 py-2 w-64 flex-shrink-0 min-h-[80px] h-fit">List not found</div>;
