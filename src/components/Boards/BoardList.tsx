@@ -56,22 +56,33 @@ const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onT
 
   const handleTitleBlur = useCallback(() => {
     setIsEditingTitle(false);
-    if (listModel && title.trim() && title !== listModel.name) {
-      // Update list name through API hook
-      updateList(listModel.id, title.trim(), {
-        onSuccess: () => {
-          if (onTaskAdded) {
-            onTaskAdded();
-          }
-        },
-        onError: (error) => {
-          console.error("Failed to rename list:", error);
-          setTitle(listModel.name);
-        }
-      });
-    } else {
+    if (!listModel || !title.trim() || title === listModel.name) {
       setTitle(listModel?.name || 'Untitled');
+      return;
     }
+
+    const originalName = listModel.name;
+    const newName = title.trim();
+
+    // Optimistic update - immediately update the UI
+    runInAction(() => {
+      listModel.name = newName;
+    });
+
+    // Then make the API call
+    updateList(listModel.id, newName, {
+      onSuccess: () => {
+        if (onTaskAdded) {
+          onTaskAdded();
+        }
+      },
+      onError: (error) => {
+        console.error("Failed to rename list:", error);
+        // Revert on error
+        listModel.name = originalName;
+        setTitle(originalName);
+      }
+    });
   }, [title, listModel, onTaskAdded, updateList]);
 
   const handleTitleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
