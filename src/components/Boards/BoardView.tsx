@@ -13,7 +13,6 @@ import { useFetchBoards } from '../../hooks/APIs/FetchBoards';
 import { useBoardsStore } from "../../contexts";
 import { runInAction } from 'mobx';
 
-
 const BoardViewContent: React.FC<{ boardId: string }> = observer(({ boardId }) => {
 
   const organizationsStore = useOrganizationsStore();
@@ -23,16 +22,14 @@ const BoardViewContent: React.FC<{ boardId: string }> = observer(({ boardId }) =
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [showNewListInput, setShowNewListInput] = useState(false);
-  const [boardName, setBoardName] = useState('');
-  
-
-  // Initialize hooks at the component level
   const { fetchLists } = useFetchLists();
   const { fetchCards } = useFetchCards();
   const { fetchBoards } = useFetchBoards();
   const { updateBoardName } = useUpdateBoardName();
 
   const loadedBoardRef = useRef<string | null>(null);
+  const boardModel = getBoardById(boardId);
+  const currentBoardName = boardModel?.name || '';
 
   useEffect(() => {
     if (!boardId) return;
@@ -42,17 +39,11 @@ const BoardViewContent: React.FC<{ boardId: string }> = observer(({ boardId }) =
       try {
         await fetchBoards(currentOrganization?.id || '', {
           onSuccess: (boards) => {
-            if (boards && boards.length > 0) {
-              // Find the board that matches our boardId
-              const currentBoard = boards.find(board => board.id === boardId);
-              if (currentBoard) {
-                setBoardName(currentBoard.name);
-              } else {
-                console.warn(`Board with ID ${boardId} not found in the response`);
-              }
-            } else {
+            if (!boards || boards.length === 0) {
               console.warn('No boards data returned');
-            }
+          } else if (!boards.find(board => board.id === boardId)) {
+              console.warn(`Board with ID ${boardId} not found in the response`);
+          }
           },
           onError: (error) => {
             console.error(`Error loading board details: ${error}`);
@@ -98,7 +89,6 @@ const BoardViewContent: React.FC<{ boardId: string }> = observer(({ boardId }) =
     }
   }, [isLoading, isInitialLoad]);
 
-  // We don't need to load boards here anymore as GlobalBoardLoader handles it
 
   const handleListAdded = () => {
     setShowNewListInput(false);
@@ -108,29 +98,37 @@ const BoardViewContent: React.FC<{ boardId: string }> = observer(({ boardId }) =
     setShowNewListInput(false);
   };
 
-  const handleBoardNameChange = async (newName: string) => {
-    if (boardId) {
+const handleBoardNameChange = async (newName: string) => {
+  if (boardId) {
+      const boardModel = getBoardById(boardId);
+      const originalName = boardModel?.name; 
+      
+      if (boardModel) {
+          runInAction(() => {
+              boardModel.name = newName;
+          });
+      }
+      
       await updateBoardName(boardId, newName, {
-        onSuccess: () => {
-          const boardModel = getBoardById(boardId);
-          if (boardModel) {
-            runInAction(() => {
-              boardModel.name = newName; 
-            });
+          onSuccess: () => {
+          },
+          onError: (error) => {
+              console.error('Error updating board name:', error);
+              
+              if (boardModel && originalName) {
+                  runInAction(() => {
+                      boardModel.name = originalName;
+                  });
+              }
           }
-          setBoardName(newName);
-        },
-        onError: (error) => {
-          console.error('Error updating board name:', error);
-        }
       });
-    }
-  };
+  }
+};
 
   return (
     <main className="w-full overflow-x-auto px-2 sm:px-4 py-4 sm:py-6">
       <BoardHeader
-        boardName={boardName}
+        boardName={currentBoardName}
         boardId={boardId}
         onBoardNameChange={handleBoardNameChange}
       />

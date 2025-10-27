@@ -1,6 +1,6 @@
 import { Droppable } from '@hello-pangea/dnd';
 import { observer } from 'mobx-react-lite';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import Icon from '../../assets/icons';
 import { useCardsStore, useListsStore } from '../../contexts';
 import { useUpdateList } from '../../hooks/APIs/UpdateList';
@@ -23,12 +23,8 @@ const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onT
   const { updateList } = useUpdateList();
   const {closeList} = useCloseList();
   const {renameCard} = useRenameCard();
-  const cardsStore = useCardsStore();
-  const { getCardById, isCreatingInList, registerCardUpdateListener, unregisterCardUpdateListener } = useCardsStore();
+  const { getCardById, isCreatingInList } = useCardsStore();
 
-  // State to force re-render when cards are updated
-  const [cardUpdateCounter, setCardUpdateCounter] = useState(0);
-  // Get models directly from stores
   const listModel = getListById(listId);
 
   const [showAddTaskForm, setShowAddTaskForm] = useState(false);
@@ -39,30 +35,10 @@ const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onT
 
   const handleTaskAdded = useCallback(() => {
     setShowAddTaskForm(false);
-    // Force a re-render by incrementing the counter
-    setCardUpdateCounter(prev => prev + 1);
-    // Call the parent's onTaskAdded to refresh the data if provided
     if (onTaskAdded) {
       onTaskAdded();
     }
   }, [onTaskAdded]);
-
-  // Callback to increment the update counter when cards change
-  const handleCardUpdate = useCallback(() => {
-    // Force immediate re-render by updating the counter
-    setCardUpdateCounter(prev => prev + 1);
-  }, [listId]);
-
-  // Register and unregister card update listeners
-  useEffect(() => {
-    if (listId) {
-      registerCardUpdateListener(listId, handleCardUpdate);
-
-      return () => {
-        unregisterCardUpdateListener(listId, handleCardUpdate);
-      };
-    }
-  }, [listId]);
 
   const handleCancelAddTask = useCallback(() => {
     setShowAddTaskForm(false);
@@ -156,7 +132,6 @@ const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onT
   }, [renameCard]);
 
   const handleTaskClick = useCallback((cardId: string) => {
-    // Pass the card click event up to the parent component
     if (onTaskClick) {
       onTaskClick(cardId);
     }
@@ -164,30 +139,8 @@ const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onT
 
   const listCards: CardModel[] = listModel?.cardIdsList
   .map(id => getCardById(id))
-  .filter((c): c is CardModel => !!c)
-  .sort((a, b) => (a.pos || 0) - (b.pos || 0)) || [];
+  .filter((c): c is CardModel => !!c)|| [];
 
-
-  // const handleDeleteCard = (cardId: string) => {
-  //   const card = cardsStore.getCardById(cardId);
-  //   if (!card) return;
-  
-  //   const list = getListById(card.listId);
-  //   if (list) {
-  //     runInAction(() => {
-  //       const index = list.cardIdsList.indexOf(cardId);
-  //       if (index > -1) list.cardIdsList.splice(index, 1); // MobX observable update
-  //     });
-  //   }
-  
-  //   runInAction(() => {
-  //     cardsStore.removeCard(cardId); // observable map/array
-  //   });
-  
-  // };
-  
-
-  // If listModel is null, render a placeholder
   if (!listModel) {
     return <div className="bg-[#F4F5F7] rounded-sm px-3 py-2 w-64 flex-shrink-0 min-h-[80px] h-fit">List not found</div>;
   }

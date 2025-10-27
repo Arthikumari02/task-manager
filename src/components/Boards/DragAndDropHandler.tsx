@@ -14,9 +14,6 @@ interface DragAndDropHandlerProps {
   children: (handleDragEnd: (result: DropResult) => void) => React.ReactNode;
 }
 
-/**
- * Component responsible for handling drag and drop operations
- */
 const DragAndDropHandler: React.FC<DragAndDropHandlerProps> = observer(({
   boardId,
   onRefreshData,
@@ -69,13 +66,18 @@ const DragAndDropHandler: React.FC<DragAndDropHandlerProps> = observer(({
 
       const sourceList = listStore.getListById(source.droppableId);
       if (sourceList) {
-        sourceList.updateCardPosition(draggableId, destination.index);
+        runInAction(() => {
+          const cardIds = sourceList.cardIdsList;
+          const [removedCardId] = cardIds.splice(source.index, 1);
+          cardIds.splice(destination.index, 0, removedCardId);
+          cardModel.pos = destination.index;
+      });
+        // sourceList.updateCardPosition(draggableId, destination.index);
       }
 
-      cardModel.pos = destination.index;
-      cardStore.cardsMap.set(draggableId, cardModel);
+      // cardModel.pos = destination.index;
+      // cardStore.cardsMap.set(draggableId, cardModel);
       reorderCardsInList(boardId, source.droppableId, source.index, destination.index).then(() => {
-        // cardStore.notifyCardUpdated(draggableId, source.droppableId);
         onRefreshData();
       }).catch(error => {
         console.error("Card reorder failed, fetching fresh data...", error);
@@ -89,26 +91,22 @@ const DragAndDropHandler: React.FC<DragAndDropHandlerProps> = observer(({
         return;
       }
 
-      listStore.removeCardFromList(source.droppableId, draggableId);
+      // listStore.removeCardFromList(source.droppableId, draggableId);
 
       const destList = listStore.getListById(destination.droppableId);
       if (destList) {
         const cardIds = [...destList.cardIdsList];
         cardIds.splice(destination.index, 0, draggableId);
 
-        // Update card IDs in the destination list
         destList.getCardIds().forEach(id => destList.removeCardId(id));
         cardIds.forEach(id => destList.addCardId(id));
       } else {
         listStore.addCardToList(draggableId, destination.droppableId);
       }
-
-      // Update the card's listId in CardStore
       cardModel.listId = destination.droppableId;
       cardModel.pos = destination.index;
       cardStore.cardsMap.set(draggableId, cardModel);
 
-      // Handle card moving between lists in CardStore API
       moveCard(boardId, draggableId, source.droppableId, destination.droppableId, destination.index).then
       (() => {
           onRefreshData();
