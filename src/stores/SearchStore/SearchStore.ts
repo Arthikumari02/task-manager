@@ -1,18 +1,10 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import { CardModel } from "../../models";
 
-interface SearchResult {
-  cards: CardModel[];
-  isLoading: boolean;
-  error: string | null;
-}
-
 class SearchStore {
-  searchResults: SearchResult = {
-    cards: [],
-    isLoading: false,
-    error: null
-  };
+  cards: CardModel[] = [];
+  isLoading: boolean = false;
+  error: string | null = null;
   searchQuery: string = '';
 
   constructor(private getAuthData: () => { token: string | null; clientId: string | null }) {
@@ -21,24 +13,24 @@ class SearchStore {
 
   setSearchResults = (cards: CardModel[]) => { 
     runInAction(() => {
-    this.searchResults.cards = cards;
-    this.searchResults.error = null; 
+    this.cards = cards;
+    this.error = null; 
     });
   };
 
   setIsLoading = (isLoading: boolean) => {
     runInAction(() => {
-      this.searchResults.isLoading = isLoading;
+      this.isLoading = isLoading;
       if (isLoading) {
-          this.searchResults.error = null;
+          this.error = null;
       }
     });
   };
 
   setSearchError = (error: string | null) => {
     runInAction(() => {
-      this.searchResults.error = error;
-      this.searchResults.cards = [];
+      this.error = error;
+      // this.cards = [];
     });
   }
 
@@ -48,30 +40,26 @@ class SearchStore {
   };
 
   clearSearch = () => {
-    runInAction(() => {
-      this.searchResults = {
-        cards: [],
-        isLoading: false,
-        error: null
-      };
-      this.searchQuery = '';
-    });
+    this.cards = [];
+    this.isLoading = false;
+    this.error = null;
+    this.searchQuery = '';
   };
 
   get hasResults(): boolean {
-    return this.searchResults.cards.length > 0;
+    return this.cards.length > 0;
   }
 
   get isSearching(): boolean {
-    return this.searchResults.isLoading;
+    return this.isLoading;
   }
 
   get searchError(): string | null {
-    return this.searchResults.error;
+    return this.error;
   }
 
   get searchCards(): CardModel[] { 
-    return this.searchResults.cards;
+    return this.cards;
   }
 }
 
