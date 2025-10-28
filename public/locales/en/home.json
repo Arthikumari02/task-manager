@@ -1,0 +1,17 @@
+{
+    "workspaceboardstext":"Your Workspace Boards",
+    "createboard":"Create Board",
+    "createorganization":"Create Organization",
+    "organization":{
+        "title":"Let's build an Organization",
+        "description":"Boost your porductivity by making it easier for everyone to access boards in one location.",
+        "name":"Organization Name",
+        "nameplaceholder":"Enter Organization Name",
+        "createbutton":"Create Organization"
+    },
+    "boards":{
+        "organizationheading":"Organization",
+        "addboardtitle":"Add Board",
+        "createbutton":"Create Board"
+    }
+}

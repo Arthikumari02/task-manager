@@ -1,0 +1,14 @@
+{
+    "addlist":"सूची में जोड़ने",
+    "addtask":"टास्क जोड़ने",
+    "addtaskButton":"टास्क जोड़ने",
+    "closelist":"सूची को बंद करें",
+    "closetask":"टास्क को बंद करें",
+    "enterTaskName": "टास्क का नाम दर्ज करें",
+    "enterListName": "सूची का नाम दर्ज करें",
+    "description":"विवरण",
+    "descriptionPlaceholder":"आधुनिक विवरण दर्ज करें...",
+    "Activity":"कार्यक्रम",
+    "Writeacomment":"एक कमेंट लिखें...",
+    "comment": "कमेंट"
+}

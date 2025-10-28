@@ -1,0 +1,8 @@
+{
+  "app": {
+    "title": "Task Manager",
+    "logout": "Logout",
+    "boards": "Boards",
+    "searchplaceholder": "Search Cards"
+  }
+}

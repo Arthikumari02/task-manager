@@ -1,0 +1,17 @@
+{
+    "workspaceboardstext":"మీ కార్యస్థల బోర్డులు",
+    "createboard":"బోర్డు బాట్స్",
+    "createorganization":"సంస్థ బాట్స్",
+    "organization":{
+        "title":"సంస్థ బాట్స్",
+        "description":"మీ కార్యస్థల బోర్డులు",
+        "name":"సంస్థ నామం",
+        "nameplaceholder":"సంస్థ నామం ప్రవేశం",
+        "createbutton":"సంస్థ బాట్స్"
+    },
+    "boards":{
+        "organizationheading":"సంస్థ",
+        "addboardtitle":"బోర్డు జోడ్డు",
+        "createbutton":"బోర్డు బాట్స్"
+    }
+}

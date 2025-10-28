@@ -4,6 +4,7 @@ import { useSearchStore } from "../../contexts/SearchContext";
 import { useSearch } from "../../hooks/APIs/PerformSearch";
 import Icon from "../../assets/icons";
 import SearchResults from "./SearchResults";
+import { useTranslation } from "react-i18next";
 
 interface SearchBarProps {
   searchQuery: string;
@@ -29,6 +30,7 @@ const SearchBar: React.FC<SearchBarProps> = observer(
     const searchInputRef = useRef<HTMLInputElement>(null);
     const mobileSearchInputRef = useRef<HTMLInputElement>(null);
     const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const { t } = useTranslation('header');
     // const [localQuery, setLocalQuery] = useState(searchQuery);
 
     useEffect(() => {
@@ -118,7 +120,7 @@ const SearchBar: React.FC<SearchBarProps> = observer(
             value={searchQuery}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
-            placeholder="Search cards or boards"
+            placeholder={t('app.searchplaceholder')}
             className="block w-32 sm:w-48 pl-10 py-1.5 rounded text-sm bg-[#4E97C2] placeholder-white text-white focus:outline-none focus:ring-2 focus:ring-white"
           />
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

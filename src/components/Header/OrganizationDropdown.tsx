@@ -55,7 +55,7 @@ const OrganizationDropdown: React.FC<OrganizationDropdownProps> = observer(({
         {/* Mobile trigger button */}
         <button
           onClick={onToggle}
-          className="bg-[#4E97C2] hover:bg-[#4E97C2] p-2 rounded-sm flex items-center justify-center w-8 h-8 transition duration-200 text-white"
+          className="bg-[#4E97C2] hover:bg-[#4E97C2] p-2 rounded-sm flex items-center justify-center w-7 h-7 transition duration-200 text-white"
           title="Organization"
         >
           <Icon type="user" className="w-4 h-4" />

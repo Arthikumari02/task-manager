@@ -1,0 +1,17 @@
+{
+    "workspaceboardstext":"आपके कार्यक्षेत्र बोर्ड",
+    "createboard":"बोर्ड बनाएं",
+    "createorganization":"संस्था बनाएं",
+    "organization":{
+        "title":"संस्था बनाएं",
+        "description":"आपके कार्यक्षेत्र बोर्ड",
+        "name":"संस्था नाम",
+        "nameplaceholder":"संस्था नाम दर्ज करें",
+        "createbutton":"संस्था बनाएं"
+    },
+    "boards":{
+        "organizationheading":"संस्था",
+        "addboardtitle":"बोर्ड जोड़ने",
+        "createbutton":"बोर्ड बनाएं"
+    }
+}

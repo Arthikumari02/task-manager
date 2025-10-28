@@ -1,0 +1,14 @@
+{
+    "addlist":"Add List",
+    "addtask":"Add Task",
+    "addtaskButton":"Add Task",
+    "closelist":"Close List",
+    "closetask":"Close Task",
+    "enterTaskName": "Enter Task Name",
+    "enterListName": "Enter List Title",
+    "description":"Description",
+    "descriptionPlaceholder":"Add a more detailed description...",
+    "Activity":"Activity",
+    "Writeacomment":"Write a comment...",
+    "comment": "Comment"
+}

@@ -25,21 +25,21 @@ const BoardDropdown: React.FC<BoardDropdownProps> = observer(({
   const handleBoardSelect = async (boardId: string) => {
     try {
       console.log('Selecting board:', boardId);
-      
+
       if (setCurrentBoard) {
         await setCurrentBoard(boardId);
       }
-      navigate(`/board/${boardId}`, { 
-        state: { forceReload: true }, 
-        replace: true 
+      navigate(`/board/${boardId}`, {
+        state: { forceReload: true },
+        replace: true
       });
-      
+
       setTimeout(() => onToggle(), 10);
     } catch (error) {
       console.error('Error selecting board:', error);
-      navigate(`/board/${boardId}`, { 
+      navigate(`/board/${boardId}`, {
         state: { forceReload: true },
-        replace: true 
+        replace: true
       });
       onToggle();
     }
@@ -78,7 +78,7 @@ const BoardDropdown: React.FC<BoardDropdownProps> = observer(({
         {/* Mobile trigger button */}
         <button
           onClick={onToggle}
-          className="bg-[#4E97C2] hover:bg-[#4E97C2] p-2 rounded-sm flex items-center justify-center w-8 h-8 transition duration-200 text-white"
+          className="bg-[#4E97C2] hover:bg-[#4E97C2] p-2 rounded-sm flex items-center justify-center w-7 h-7 transition duration-200 text-white"
           title="Boards"
         >
           <Icon type="board" />
@@ -87,9 +87,9 @@ const BoardDropdown: React.FC<BoardDropdownProps> = observer(({
         {/* Mobile dropdown (bottom sheet) */}
         {isOpen && (
           <>
-            <div className="fixed inset-0 z-40 md:hidden bg-black bg-opacity-50" onClick={onToggle}    style={{ pointerEvents: 'auto' }}
+            <div className="fixed inset-0 z-40 md:hidden bg-black bg-opacity-50" onClick={onToggle} style={{ pointerEvents: 'auto' }}
             />
-            <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white shadow-2xl max-h-[80vh] overflow-hidden"  onClick={(e) => e.stopPropagation()}>
+            <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white shadow-2xl max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
               {/* Header with title and close button */}
               <div className="flex justify-center border-b border-gray-200 py-3 relative">
                 <h2 className="text-md text-gray-700 font-medium">Your Workspace boards</h2>
@@ -110,8 +110,9 @@ const BoardDropdown: React.FC<BoardDropdownProps> = observer(({
                         key={board.id}
                         onClick={() => {
                           console.log('Clicked board:', board.id);
-                         handleBoardSelect(board.id)}}
-                         onTouchStart={() => handleBoardSelect(board.id)}
+                          handleBoardSelect(board.id)
+                        }}
+                        onTouchStart={() => handleBoardSelect(board.id)}
                         className="w-full text-left px-4 py-3 text-base text-blue-600 hover:bg-gray-50 flex items-center space-x-3"
                       >
                         <span className="font-medium">{board.name}</span>
