@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
-import Icon from '../assets/icons';
-import Header from './Header/Header';
-import CreateBoardModal from './Boards/CreateBoardModal';
-import CreateOrganizationModal from './Header/CreateOrganizationModal';
-import Loading from './Loading';
-import { useOrganizationsStore, useBoardsStore, useAuthStore, SearchStoreProvider } from '../contexts';
-import { useFetchBoards } from '../hooks/APIs/FetchBoards';
-import { useFetchOrganizations } from '../hooks/APIs/FetchOrganizations';
+import Icon from '../../assets/icons';
+import Header from '../Header/Header';
+import CreateBoardModal from './CreateBoardModal';
+import CreateOrganizationModal from '../Header/CreateOrganizationModal';
+import Loading from '../Loading';
+import { useOrganizationsStore, useBoardsStore, useAuthStore, SearchStoreProvider } from '../../contexts';
+import { useFetchBoards } from '../../hooks/APIs/FetchBoards';
+import { useFetchOrganizations } from '../../hooks/APIs/FetchOrganizations';
 
 const Dashboard: React.FC = observer(() => {
   const navigate = useNavigate();
@@ -22,14 +22,11 @@ const Dashboard: React.FC = observer(() => {
   const { fetchUserInfo } = useAuthStore();
   const fetchOrganizations = useFetchOrganizations();
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    // Always fetch user info on mount
     if (fetchUserInfo) {
       fetchUserInfo();
     }
 
-    // Always try to load organizations, regardless of current state
     const loadOrganizationsData = async () => {
 
       if (organizationsStore.organizations.length === 0) {
@@ -43,14 +40,11 @@ const Dashboard: React.FC = observer(() => {
 
   const { fetchBoards } = useFetchBoards();
 
-  // Track the last organization ID we fetched boards for
   const lastFetchedOrgIdRef = useRef<string | null>(null);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const loadBoardsData = async () => {
       if (currentOrganization) {
-        // Always fetch boards when organization changes or on initial load
         await fetchBoards(currentOrganization.id);
         lastFetchedOrgIdRef.current = currentOrganization.id;
       }

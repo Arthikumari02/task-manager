@@ -162,13 +162,11 @@ const BoardView: React.FC = observer(() => {
         showSearch={true}
         showNavigation={true}
       />
-      <SearchStoreProvider>
-        <ListsStoreProvider>
-          <CardsStoreProvider>
-            <BoardViewContent boardId={boardId} />
-          </CardsStoreProvider>
-        </ListsStoreProvider>
-      </SearchStoreProvider>
+      <ListsStoreProvider>
+        <CardsStoreProvider>
+          <BoardViewContent boardId={boardId} />
+        </CardsStoreProvider>
+      </ListsStoreProvider>
     </div>
   );
 });

@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AppProvider, useAuthStore } from './contexts';
 import { Login } from './components/Auth/Index';
-import Dashboard from './components/Dashboard';
+import Dashboard from './components/Boards/Dashboard';
 import { BoardView } from './components/Boards/Index';
 import PageNotFound from './components/PageNotFound';
 import './index.css';
