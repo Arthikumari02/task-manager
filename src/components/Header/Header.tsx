@@ -6,7 +6,7 @@ import { useAuthStore } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { SearchStoreProvider } from '../../contexts/SearchContext';
 import CreateBoardModal from '../Boards/CreateBoardModal';
-import CreateOrganizationModal from './CreateOrganizationModal';
+import CreateOrganizationModal from '../Boards/CreateOrganizationModal';
 import OrganizationDropdown from './OrganizationDropdown';
 import BoardDropdown from './BoardDropdown';
 import SearchBar from './SearchBar';
@@ -123,7 +123,11 @@ const Header: React.FC<HeaderProps> = observer(({
                 className="flex items-center text-white hover:bg-[#4E97C2] p-1.5 rounded-sm transition-colors language-dropdown"
                 title="Change language"
               >
-                <span className="text-xs font-medium">{i18n.language.toUpperCase()}</span>
+                <span className="text-xs font-medium">{
+                  i18n.language === 'hi' ? 'हिं' :
+                    i18n.language === 'te' ? 'తె' :
+                      i18n.language.toUpperCase()
+                }</span>
                 <Icon type="chevronDown" className="w-3 h-3 ml-1" />
               </button>
 
@@ -138,7 +142,7 @@ const Header: React.FC<HeaderProps> = observer(({
                       }}
                       className={`w-full text-left px-4 py-2 text-sm ${i18n.language === 'en' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'}`}
                     >
-                      EN - English
+                      English
                     </button>
                     <button
                       onClick={() => {
@@ -147,7 +151,7 @@ const Header: React.FC<HeaderProps> = observer(({
                       }}
                       className={`w-full text-left px-4 py-2 text-sm ${i18n.language === 'hi' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'}`}
                     >
-                      HI - हिंदी
+                      हिंदी
                     </button>
                     <button
                       onClick={() => {
@@ -156,7 +160,7 @@ const Header: React.FC<HeaderProps> = observer(({
                       }}
                       className={`w-full text-left px-4 py-2 text-sm ${i18n.language === 'te' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'}`}
                     >
-                      TE - తెలుగు
+                      తెలుగు
                     </button>
                   </div>
                 </div>

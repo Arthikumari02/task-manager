@@ -4,11 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import Icon from '../../assets/icons';
 import Header from '../Header/Header';
 import CreateBoardModal from './CreateBoardModal';
-import CreateOrganizationModal from '../Header/CreateOrganizationModal';
+import CreateOrganizationModal from './CreateOrganizationModal';
 import Loading from '../Loading';
 import { useOrganizationsStore, useBoardsStore, useAuthStore, SearchStoreProvider } from '../../contexts';
 import { useFetchBoards } from '../../hooks/APIs/FetchBoards';
 import { useFetchOrganizations } from '../../hooks/APIs/FetchOrganizations';
+import { useTranslation } from 'react-i18next';
 
 const Dashboard: React.FC = observer(() => {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ const Dashboard: React.FC = observer(() => {
 
   const { fetchUserInfo } = useAuthStore();
   const fetchOrganizations = useFetchOrganizations();
+  const { t } = useTranslation('home');
 
   useEffect(() => {
     if (fetchUserInfo) {
@@ -91,7 +93,7 @@ const Dashboard: React.FC = observer(() => {
             className="absolute right-4 h-10 hidden sm:inline-flex items-center justify-center bg-blue-500 hover:bg-blue-600 rounded-sm text-white px-4 transition-colors duration-200 shadow-lg"
             title="Create New Organization"
           >
-            Create New Organization
+            {t('createorganization')}
           </button>
           <button
             onClick={() => setIsCreateOrgModalOpen(true)}
@@ -113,7 +115,7 @@ const Dashboard: React.FC = observer(() => {
               <div className="w-full flex flex-col justify-start">
                 <div className="flex items-center text-white mb-6">
                   <Icon type="board" size={22} />
-                  <span className="text-lg">You Don't have any board in workspace</span>
+                  <span className="text-lg">{t('workspaceboardstext')}</span>
                 </div>
 
                 <button
@@ -121,7 +123,7 @@ const Dashboard: React.FC = observer(() => {
                   className="w-60 h-20 bg-white hover:bg-blue-600 text-black hover:text-white px-6 py-3 rounded transition-colors duration-200 flex items-center space-x-2"
                 >
                   <Icon type="plus" className="w-5 h-5" />
-                  <span>Create new board</span>
+                  <span>{t('createboard')}</span>
                 </button>
               </div>
             ) : (
@@ -129,7 +131,7 @@ const Dashboard: React.FC = observer(() => {
                 {/* Section Header */}
                 <div className="flex items-center text-white mb-6">
                   <Icon type="user" size={32} color="white" />
-                  <h2 className="text-lg font-medium ml-2">Your Workspace boards</h2>
+                  <h2 className="text-lg font-medium ml-2">{t('workspaceboardstext')}</h2>
                 </div>
 
                 {/* Boards Grid */}
@@ -150,7 +152,7 @@ const Dashboard: React.FC = observer(() => {
                     className="w-60 h-20 bg-white hover:bg-[#2FA9F1] hover:text-white text-gray-600 p-6 rounded-sm transition-colors duration-200 flex items-center justify-center space-x-2 min-h-[120px]"
                   >
                     <Icon type="plus" className="w-6 h-6" />
-                    <span className="font-medium">Create new board</span>
+                    <span className="font-medium">{t('createboard')}</span>
                   </button>
                 </div>
               </div>

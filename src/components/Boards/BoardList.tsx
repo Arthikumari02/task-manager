@@ -11,6 +11,7 @@ import AddTaskForm from './AddTaskForm';
 import ListContextMenu from './ListContextMenu';
 import TaskCard from './TaskCard';
 import { runInAction } from 'mobx';
+import { useTranslation } from 'react-i18next';
 
 interface BoardListProps {
   listId: string;
@@ -34,6 +35,7 @@ const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onT
   const [title, setTitle] = useState(listModel?.name || 'Untitled');
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
+  const { t } = useTranslation('boards');
 
   const handleTaskAdded = useCallback(() => {
     setShowAddTaskForm(false);
@@ -159,7 +161,7 @@ const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onT
     .filter((c): c is CardModel => !!c) || [];
 
   if (!listModel) {
-    return <div className="bg-[#F4F5F7] rounded-sm px-3 py-2 w-64 flex-shrink-0 min-h-[80px] h-fit">List not found</div>;
+    return <div className="bg-[#F4F5F7] rounded-sm px-3 py-2 w-64 flex-shrink-0 min-h-[80px] h-fit">{t('listNotFound')}</div>;
   }
 
   return (
@@ -237,10 +239,10 @@ const BoardList: React.FC<BoardListProps> = observer(({ listId, onTaskAdded, onT
           {isCreatingInList(listModel.id) ? (
             <>
               <div className="w-3 h-3 border border-gray-600 border-t-transparent rounded-full animate-spin mr-1"></div>
-              <span>Adding task...</span>
+              <span>{t('adding')}</span>
             </>
           ) : (
-            <span>+ Add a task</span>
+            <span>+ {t('addtask')}</span>
           )}
         </button>
       )}

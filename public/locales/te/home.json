@@ -11,7 +11,7 @@
     },
     "boards":{
         "organizationheading":"సంస్థ",
-        "addboardtitle":"బోర్డు జోడ్డు",
+        "nameplaceholder":"బోర్డు నామం ప్రవేశం",
         "createbutton":"బోర్డు బాట్స్"
     }
 }

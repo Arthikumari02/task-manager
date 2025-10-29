@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import Icon from '../../assets/icons';
 import { useCreateOrganization } from '../../hooks/APIs/CreateOrganization';
+import { useTranslation } from 'react-i18next';
 
 interface CreateOrganizationModalProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface CreateOrganizationModalProps {
 const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = observer(({ isOpen, onClose }) => {
   const [orgName, setOrgName] = useState('');
   const { createOrganization, isCreating } = useCreateOrganization();
+  const { t } = useTranslation('home');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,9 +36,9 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = observer
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50">
       {/* Desktop: Center modal */}
       <div className="sm:hidden md:flex items-center justify-center min-h-screen">
-        <div className="bg-white rounded-sm shadow-xl max-w-sm w-full p-3 animate-in fade-in zoom-in duration-200">
+        <div className="bg-white rounded-sm shadow-xl max-w-sm w-full p-2 animate-in fade-in zoom-in duration-200">
           {/* Modal Header */}
-          <div className="flex items-center justify-between p-4">
+          <div className="flex items-center justify-between p-2">
             <div></div>
             <button
               onClick={handleClose}
@@ -49,19 +51,19 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = observer
           {/* Modal Body */}
           <form onSubmit={handleSubmit} className="p-4">
             <div className="mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">Let's build an Organization</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">{t('organization.title')}</h2>
               <p className="text-sm text-gray-600 mb-4">
-                Boost your productivity by making it easier for everyone to access boards in one location.
+                {t('organization.description')}
               </p>
               <label htmlFor="orgName" className="block text-sm font-medium text-gray-700 mb-2">
-                ORGANIZATION NAME
+                {t('organization.name')}
               </label>
               <input
                 type="text"
                 id="orgName"
                 value={orgName}
                 onChange={(e) => setOrgName(e.target.value)}
-                placeholder="Enter organization name"
+                placeholder={t('organization.nameplaceholder')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
                 autoFocus
@@ -84,7 +86,7 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = observer
                     <span>Creating...</span>
                   </>
                 ) : (
-                  <span>Create Organization</span>
+                  <span>{t('organization.createbutton')}</span>
                 )}
               </button>
             </div>

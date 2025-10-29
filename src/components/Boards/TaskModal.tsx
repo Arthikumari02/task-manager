@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { TrelloCard } from '../../types';
 import { useAuthStore } from '../../contexts/AuthContext';
 import Icon from '../../assets/icons';
+import { useTranslation } from 'react-i18next';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -33,12 +34,12 @@ const TaskModal: React.FC<TaskModalProps> = observer(({
   onTaskRename
 }) => {
   const { userInfo } = useAuthStore();
+  const { t } = useTranslation('boards');
   const [description, setDescription] = useState('');
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [comment, setComment] = useState('');
   const [comments, setComments] = useState<Comment[]>([]);
 
-  // Add state for title editing
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [taskTitle, setTaskTitle] = useState('');
 
@@ -47,7 +48,7 @@ const TaskModal: React.FC<TaskModalProps> = observer(({
       setDescription(task.desc || '');
       setTaskTitle(task.name || '');
     }
-  }, [task?.id, task?.name, task?.desc]); // Add dependencies to update when task properties change
+  }, [task?.id, task?.name, task?.desc]);
 
   if (!isOpen || !task) return null;
 
@@ -63,7 +64,6 @@ const TaskModal: React.FC<TaskModalProps> = observer(({
     setDescription(task.desc || '');
   };
 
-  // Add title editing handlers
   const handleTitleClick = () => {
     setIsEditingTitle(true);
   };
@@ -76,10 +76,8 @@ const TaskModal: React.FC<TaskModalProps> = observer(({
     setIsEditingTitle(false);
     if (taskTitle.trim() && taskTitle !== task.name) {
       await onTaskRename(task.id, taskTitle.trim());
-      // Task name should now be updated in the store, which will trigger a re-render
-      // with the updated task prop
     } else {
-      setTaskTitle(task.name || ''); // Reset if empty or unchanged
+      setTaskTitle(task.name || '');
     }
   };
 
@@ -147,7 +145,7 @@ const TaskModal: React.FC<TaskModalProps> = observer(({
                 </h2>
               )}
               <p className="text-sm text-gray-500">
-                in list {listName}
+                {t('inList')} {listName}
               </p>
             </div>
             <div className="flex items-center space-x-2">
@@ -174,7 +172,7 @@ const TaskModal: React.FC<TaskModalProps> = observer(({
             <div className="mb-6">
               <div className="flex items-center mb-2">
                 <Icon type="description" className="w-5 h-5 mr-2 text-gray-500" />
-                <h3 className="text-sm font-semibold text-gray-700">Description</h3>
+                <h3 className="text-sm font-semibold text-gray-700">{t('description')}</h3>
               </div>
               <div className="border-t border-gray-200 pt-2">
                 {isEditingDescription ? (
@@ -182,7 +180,7 @@ const TaskModal: React.FC<TaskModalProps> = observer(({
                     <textarea
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Add a more detailed description..."
+                      placeholder={t('descriptionPlaceholder')}
                       className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       rows={4}
                       autoFocus
@@ -192,13 +190,13 @@ const TaskModal: React.FC<TaskModalProps> = observer(({
                         onClick={handleDescriptionSave}
                         className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
                       >
-                        Save
+                        {t('save')}
                       </button>
                       <button
                         onClick={handleDescriptionCancel}
                         className="px-3 py-1 text-gray-600 text-sm hover:bg-gray-100 rounded transition-colors"
                       >
-                        Cancel
+                        {t('cancel')}
                       </button>
                     </div>
                   </div>
@@ -210,7 +208,7 @@ const TaskModal: React.FC<TaskModalProps> = observer(({
                     {description ? (
                       <p className="text-gray-700 whitespace-pre-wrap">{description}</p>
                     ) : (
-                      <p className="text-gray-400">Add a more detailed description...</p>
+                      <p className="text-gray-400">{t('descriptionPlaceholder')}</p>
                     )}
                   </div>
                 )}
@@ -221,7 +219,7 @@ const TaskModal: React.FC<TaskModalProps> = observer(({
             <div>
               <div className="flex items-center mb-2">
                 <Icon type="activity" className="w-5 h-5 mr-2 text-gray-500" />
-                <h3 className="text-sm font-semibold text-gray-700">Activity</h3>
+                <h3 className="text-sm font-semibold text-gray-700">{t('activity')}</h3>
               </div>
               <div className="border-t border-gray-200 pt-2">
                 {/* Comments */}
@@ -248,7 +246,7 @@ const TaskModal: React.FC<TaskModalProps> = observer(({
                     <textarea
                       value={comment}
                       onChange={(e) => setComment(e.target.value)}
-                      placeholder="Write a comment..."
+                      placeholder={t('writeacomment')}
                       className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       rows={2}
                     />
@@ -258,7 +256,7 @@ const TaskModal: React.FC<TaskModalProps> = observer(({
                         disabled={!comment.trim()}
                         className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Comment
+                        {t('comment')}
                       </button>
                     </div>
                   </div>

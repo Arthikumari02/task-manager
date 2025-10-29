@@ -3,6 +3,8 @@
     "title": "कार्य प्रबंधक",
     "logout": "लॉगआउट",
     "boards": "बोर्ड",
-    "searchplaceholder": "कार्ड खोजें"
+    "searchplaceholder": "कार्ड खोजें",
+    "noBoards": "बोर्ड उपलब्ध नहीं है",
+    "recentBoards": "Recent Boards"
   }
 }

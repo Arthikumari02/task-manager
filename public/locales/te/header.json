@@ -3,6 +3,8 @@
     "title": "టాస్క్ మేనేజర్",
     "logout": "లాగ్ అవుట్",
     "boards": "బోర్డులు",
-    "searchplaceholder": "సూచించడం కార్డులు"
+    "searchplaceholder": "సూచించడం కార్డులు",
+    "noBoards": "బోర్డు ఉపయోగించడం లేదు",
+    "recentBoards": "మీ కార్యస్థల బోర్డులు"
     }
 }

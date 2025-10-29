@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface ListContextMenuProps {
   isOpen: boolean;
@@ -13,6 +14,8 @@ const ListContextMenu: React.FC<ListContextMenuProps> = ({
   onClose,
   onCloseList
 }) => {
+  const { t } = useTranslation('boards');
+
   if (!isOpen) return null;
 
   const handleCloseList = () => {
@@ -27,7 +30,7 @@ const ListContextMenu: React.FC<ListContextMenuProps> = ({
         className="fixed inset-0 z-40"
         onClick={onClose}
       />
-      
+
       {/* Menu */}
       <div
         className="fixed z-50 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-[120px]"
@@ -40,7 +43,7 @@ const ListContextMenu: React.FC<ListContextMenuProps> = ({
           onClick={handleCloseList}
           className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
         >
-          Close List
+          {t('closelist')}
         </button>
       </div>
     </>

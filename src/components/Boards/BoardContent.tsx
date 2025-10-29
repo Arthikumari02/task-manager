@@ -38,19 +38,19 @@ const BoardContent: React.FC<BoardContentProps> = observer(({
   }, [boardId, listStore, cardStore, onHideAddListForm]);
 
   const handleListCreationSuccess = useCallback(() => {
-    refreshData();    
+    refreshData();
     onHideAddListForm();
-}, [refreshData, onHideAddListForm]);
+  }, [refreshData, onHideAddListForm]);
 
   const handleDataLoaded = useCallback((isLoaded: boolean) => {
     setDataLoaded(isLoaded);
   }, []);
-const boardModel = boardsStore.getBoardById(boardId);
+  const boardModel = boardsStore.getBoardById(boardId);
 
-const lists = (boardModel?.listIds || [])
-  .map(id => listStore.getListById(id))
-  .filter((list): list is ListModel => !!list)
-  .filter(list => !list.closed);
+  const lists = (boardModel?.listIds || [])
+    .map(id => listStore.getListById(id))
+    .filter((list): list is ListModel => !!list)
+    .filter(list => !list.closed);
 
   if (dataLoaded && lists.length === 0 && !showNewListInput) {
     return (

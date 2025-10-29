@@ -11,7 +11,7 @@
     },
     "boards":{
         "organizationheading":"संस्था",
-        "addboardtitle":"बोर्ड जोड़ने",
+        "nameplaceholder":"बोर्ड नाम दर्ज करें",
         "createbutton":"बोर्ड बनाएं"
     }
 }

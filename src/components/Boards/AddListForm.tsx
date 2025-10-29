@@ -6,6 +6,7 @@ import { AddListFormProps } from '../../types';
 import { BoardModel } from '../../models';
 import { useCreateList } from '../../hooks/APIs/CreateList';
 import { runInAction } from 'mobx';
+import { useTranslation } from 'react-i18next';
 
 const AddListForm: React.FC<AddListFormProps> = observer(({
   boardId,
@@ -13,6 +14,7 @@ const AddListForm: React.FC<AddListFormProps> = observer(({
   onCancel,
   isFirstList = false
 }) => {
+  const { t } = useTranslation('boards');
   const { getBoardById } = useBoardsStore();
   const { createList, isCreating } = useCreateList();
   const [listTitle, setListTitle] = useState('');
@@ -23,23 +25,23 @@ const AddListForm: React.FC<AddListFormProps> = observer(({
 
     try {
       await createList(boardId, title, (listModel) => {
-          const boardModel = getBoardById(boardId);
-          if (boardModel && boardModel instanceof BoardModel) {
-              if (!boardModel.hasListId(listModel.id)) {
-                  boardModel.addListId(listModel.id);
-              } runInAction(() => {
-                if (!boardModel.hasListId(listModel.id)) {
-                    boardModel.addListId(listModel.id);
-                }
-              });
-          }
+        const boardModel = getBoardById(boardId);
+        if (boardModel && boardModel instanceof BoardModel) {
+          if (!boardModel.hasListId(listModel.id)) {
+            boardModel.addListId(listModel.id);
+          } runInAction(() => {
+            if (!boardModel.hasListId(listModel.id)) {
+              boardModel.addListId(listModel.id);
+            }
+          });
+        }
       });
       setListTitle('');
-      onListAdded(); 
-      
-      } catch (error) {
+      onListAdded();
+
+    } catch (error) {
       console.error("Failed to create list:", error);
-      onListAdded(); 
+      onListAdded();
     }
   };
 
@@ -54,12 +56,12 @@ const AddListForm: React.FC<AddListFormProps> = observer(({
   if (isFirstList) {
     return (
       <div className="bg-gray-100 rounded-sm p-3 max-w-[252px] flex-shrink-0 mx-auto">
-        <h3 className="font-semibold text-gray-800 mb-2">Create Your First List</h3>
+        <h3 className="font-semibold text-gray-800 mb-2">{t('createyourfirstlist')}</h3>
         <input
           type="text"
           value={listTitle}
           onChange={(e) => setListTitle(e.target.value)}
-          placeholder="Enter list title..."
+          placeholder={t('enterlisttitle')}
           className="w-full p-2 border rounded mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           autoFocus
           onKeyDown={handleKeyDown}
@@ -96,7 +98,7 @@ const AddListForm: React.FC<AddListFormProps> = observer(({
         type="text"
         value={listTitle}
         onChange={(e) => setListTitle(e.target.value)}
-        placeholder="Enter list title..."
+        placeholder={t('enterListName')}
         className="w-full p-1.5 border rounded text-sm mb-2"
         autoFocus
         onKeyDown={handleKeyDown}
@@ -111,10 +113,10 @@ const AddListForm: React.FC<AddListFormProps> = observer(({
           {isCreating ? (
             <>
               <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
-              <span>Adding...</span>
+              <span>{t('adding')}</span>
             </>
           ) : (
-            <span>Add List</span>
+            <span>{t('addlist')}</span>
           )}
         </button>
         <button

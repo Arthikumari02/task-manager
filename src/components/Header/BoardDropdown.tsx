@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { useBoardsStore } from '../../contexts/BoardContext';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../../assets/icons';
+import { useTranslation } from 'react-i18next';
 
 interface BoardDropdownProps {
   isOpen: boolean;
@@ -14,12 +15,12 @@ interface BoardDropdownProps {
 const BoardDropdown: React.FC<BoardDropdownProps> = observer(({
   isOpen,
   onToggle,
-  onCreateBoard,
   isMobile = false
 }) => {
   const navigate = useNavigate();
   const boardStore = useBoardsStore();
   const { currentOrganizationBoards, isLoading: isLoadingBoards, setCurrentBoard } = boardStore;
+  const { t } = useTranslation('header');
 
   // Handle board selection directly in the component
   const handleBoardSelect = async (boardId: string) => {
@@ -79,7 +80,7 @@ const BoardDropdown: React.FC<BoardDropdownProps> = observer(({
         <button
           onClick={onToggle}
           className="bg-[#4E97C2] hover:bg-[#4E97C2] p-2 rounded-sm flex items-center justify-center w-7 h-7 transition duration-200 text-white"
-          title="Boards"
+          title={t('app.boards')}
         >
           <Icon type="board" />
         </button>
@@ -120,20 +121,9 @@ const BoardDropdown: React.FC<BoardDropdownProps> = observer(({
                     ))
                   ) : (
                     <div className="px-4 py-6 text-base text-gray-500 text-center">
-                      No boards available
+                      {t('app.noBoards')}
                     </div>
                   )}
-
-                  {/* Create New Board Option */}
-                  <button
-                    onClick={onCreateBoard}
-                    className="w-full text-left px-4 py-3 text-base hover:bg-gray-50 flex items-center space-x-3 text-blue-600"
-                  >
-                    <div className="w-6 h-6 rounded bg-blue-100 flex items-center justify-center">
-                      <Icon type="plus" className="w-3 h-3 text-blue-600" />
-                    </div>
-                    <span className="font-medium">Create new board</span>
-                  </button>
                 </div>
               </div>
             </div>
@@ -154,14 +144,14 @@ const BoardDropdown: React.FC<BoardDropdownProps> = observer(({
         className="flex items-center space-x-1 bg-[#4E97C2] hover:bg-[#4E97C2] px-3 py-2 rounded transition duration-200 text-white font-medium"
       >
         <img src="/boardlogo.png" alt="Boards" className="w-4 h-4" />
-        <span>Boards</span>
+        <span>{t('app.boards')}</span>
       </button>
 
       {/* Desktop dropdown */}
       {isOpen && (
         <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50 overflow-hidden" onClick={e => e.stopPropagation()}>
           <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100">
-            RECENT BOARDS
+            {t('app.recentBoards')}
           </div>
           <div className={`py-1 ${currentOrganizationBoards.length > 4 ? 'max-h-48 overflow-y-auto scrollbar-hide' : ''}`}>
             {isLoadingBoards ? (
@@ -179,21 +169,10 @@ const BoardDropdown: React.FC<BoardDropdownProps> = observer(({
               ))
             ) : (
               <div className="px-4 py-2 text-sm text-gray-500">
-                No boards available
+                {t('app.noBoards')}
               </div>
             )}
           </div>
-
-          {/* Create New Board Option */}
-          <button
-            onClick={onCreateBoard}
-            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center space-x-3 text-blue-600 border-t border-gray-100"
-          >
-            <div className="w-6 h-6 rounded bg-blue-100 flex items-center justify-center">
-              <Icon type="plus" className="w-3 h-3 text-blue-600" />
-            </div>
-            <span>Create new board</span>
-          </button>
         </div>
       )}
     </div>

@@ -2,13 +2,23 @@
     "addlist":"Add List",
     "addtask":"Add Task",
     "addtaskButton":"Add Task",
+    "adding":"Adding...",
     "closelist":"Close List",
     "closetask":"Close Task",
     "enterTaskName": "Enter Task Name",
     "enterListName": "Enter List Title",
     "description":"Description",
     "descriptionPlaceholder":"Add a more detailed description...",
-    "Activity":"Activity",
-    "Writeacomment":"Write a comment...",
-    "comment": "Comment"
+    "activity":"Activity",
+    "writeacomment":"Write a comment...",
+    "comment": "Comment",
+    "listNotFound": "List not found",
+    "emptyboardsstate": {
+        "title": "This board is empty",
+        "description": "Add a list to get started organizing your tasks",
+        "button": "Add a list"
+    },
+    "save": "Save",
+    "cancel": "Cancel",
+    "inList": "In List"
 }

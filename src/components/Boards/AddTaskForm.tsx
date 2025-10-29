@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useCardsStore, useListsStore, useBoardsStore } from '../../contexts';
 import { useCreateCard } from '../../hooks/APIs/CreateCard';
+import { useTranslation } from 'react-i18next';
 
 interface AddTaskFormProps {
   listId: string;
@@ -17,58 +18,45 @@ const AddTaskForm: React.FC<AddTaskFormProps> = observer(({ listId, boardId, onT
   const { getBoardById } = useBoardsStore();
   const { createCard, isCreating } = useCreateCard();
   const [taskTitle, setTaskTitle] = useState('');
+  const { t } = useTranslation('boards');
 
   const handleAddTask = async () => {
     const title = taskTitle.trim();
     if (!title) return;
 
     try {
-      // Reset the form immediately for better UX
       setTaskTitle('');
 
-      // Create the card using the API hook
       const newCard = await createCard(listId, title, (cardModel) => {
-        // Get the list model and add the card ID directly
         const listModel = getListById(listId);
         if (listModel && cardModel) {
-          // Add card ID to the list model
           listModel.addCardId(cardModel.id);
 
-          // Also ensure the board knows about this list
           const boardModel = getBoardById(boardId);
           if (boardModel && !boardModel.hasListId(listId)) {
             boardModel.addListId(listId);
           }
         }
 
-        // Update the list with the new card (this updates the store's internal mapping)
         addCardToList(cardModel.id, listId);
 
-        // Immediately notify listeners that a card was added to this list
         notifyCardUpdated(cardModel.id, listId);
 
-        // Notify parent component that a task was added
         if (onTaskAdded) {
           onTaskAdded();
         }
 
-        // Close the form
         onCancel();
       });
 
-      // Force an immediate notification after the card is created
-      // This ensures the UI updates even if the callback hasn't run yet
       if (newCard) {
-        // Get the list model and add the card ID directly to ensure immediate UI update
         const listModel = getListById(listId);
         if (listModel) {
           listModel.addCardId(newCard.id);
         }
 
-        // Update the list with the new card
         addCardToList(newCard.id, listId);
 
-        // Notify listeners
         notifyCardUpdated(newCard.id, listId);
       }
     } catch (error) {
@@ -90,7 +78,7 @@ const AddTaskForm: React.FC<AddTaskFormProps> = observer(({ listId, boardId, onT
         type="text"
         value={taskTitle}
         onChange={(e) => setTaskTitle(e.target.value)}
-        placeholder="Enter task name..."
+        placeholder={t('enterTaskName')}
         className="w-full p-1.5 border rounded text-sm"
         autoFocus
         onKeyDown={handleKeyDown}
@@ -105,10 +93,10 @@ const AddTaskForm: React.FC<AddTaskFormProps> = observer(({ listId, boardId, onT
           {isCreating ? (
             <>
               <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
-              <span>Adding...</span>
+              <span>{t('adding')}</span>
             </>
           ) : (
-            <span>Add Task</span>
+            <span>{t('addtask')}</span>
           )}
         </button>
         <button

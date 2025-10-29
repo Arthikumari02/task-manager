@@ -11,7 +11,7 @@
     },
     "boards":{
         "organizationheading":"Organization",
-        "addboardtitle":"Add Board",
+        "nameplaceholder":"Enter Board Name",
         "createbutton":"Create Board"
     }
 }

@@ -101,17 +101,6 @@ const OrganizationDropdown: React.FC<OrganizationDropdownProps> = observer(({
                       )}
                     </button>
                   ))}
-
-                  {/* Create New Organization Option */}
-                  <button
-                    onClick={onCreateOrganization}
-                    className="w-full text-left px-4 py-3 text-base hover:bg-gray-50 flex items-center space-x-3 text-blue-600 border-t border-gray-100 mt-2 pt-4 rounded-lg"
-                  >
-                    <div className="w-6 h-6 bg-blue-100 rounded flex items-center justify-center">
-                      <Icon type="plus" className="w-3 h-3 text-blue-600" />
-                    </div>
-                    <span className="font-medium">Create new organization</span>
-                  </button>
                 </div>
               </div>
             </div>
@@ -160,17 +149,6 @@ const OrganizationDropdown: React.FC<OrganizationDropdownProps> = observer(({
                 );
               })
             )}
-
-            {/* Create New Organization Option */}
-            <button
-              onClick={onCreateOrganization}
-              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center space-x-3 text-blue-600 border-t border-gray-100"
-            >
-              <div className="w-4 h-4 bg-blue-100 rounded flex items-center justify-center">
-                <Icon type="plus" className="w-2 h-2 text-blue-600" />
-              </div>
-              <span>Create new organization</span>
-            </button>
           </div>
         </div>
       )}

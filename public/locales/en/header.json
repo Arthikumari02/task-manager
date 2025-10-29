@@ -3,6 +3,8 @@
     "title": "Task Manager",
     "logout": "Logout",
     "boards": "Boards",
-    "searchplaceholder": "Search Cards"
+    "searchplaceholder": "Search Cards",
+    "noBoards": "No boards available",
+    "recentBoards": "Recent Boards"
   }
 }

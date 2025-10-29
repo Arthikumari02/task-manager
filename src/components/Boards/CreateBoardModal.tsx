@@ -4,6 +4,7 @@ import Icon from '../../assets/icons';
 import { useNavigate } from 'react-router-dom';
 import { useOrganizationsStore } from '../../contexts';
 import { useCreateBoard } from '../../hooks/APIs/CreateBoard';
+import { useTranslation } from 'react-i18next';
 
 interface CreateBoardModalProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = observer(({ isOpen, on
   const navigate = useNavigate();
   const { currentOrganization } = useOrganizationsStore();
   const { createBoard, isCreating } = useCreateBoard();
+  const { t } = useTranslation('home');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,7 +64,7 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = observer(({ isOpen, on
                 id="boardName"
                 value={boardName}
                 onChange={(e) => setBoardName(e.target.value)}
-                placeholder="Add board title"
+                placeholder={t('boards.nameplaceholder')}
                 className="w-full px-3 py-2 bg-[#A7B1BF] border-0 rounded text-sm text-white placeholder-white focus:outline-none"
                 required
                 autoFocus
@@ -72,7 +74,7 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = observer(({ isOpen, on
             {currentOrganization ? (
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Organization
+                  {t('boards.organizationheading')}
                 </label>
                 <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
                   {currentOrganization.displayName}
@@ -96,7 +98,7 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = observer(({ isOpen, on
                     <span>Creating...</span>
                   </>
                 ) : (
-                  <span>Create Board</span>
+                  <span>{t('boards.createbutton')}</span>
                 )}
               </button>
             </div>
@@ -121,7 +123,7 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = observer(({ isOpen, on
                 id="mobileBoardName"
                 value={boardName}
                 onChange={(e) => setBoardName(e.target.value)}
-                placeholder="Add board title"
+                placeholder={t('enterBoardName')}
                 className="w-full px-2 py-1 bg-[#A7B1BF] border-0 rounded-lg text-base text-white placeholder-white focus:outline-none"
                 required
                 autoFocus
@@ -131,7 +133,7 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = observer(({ isOpen, on
             {currentOrganization ? (
               <div className="mb-6">
                 <label className="block text-base font-semibold text-gray-900 mb-2">
-                  Organization
+                  {t('boards.organizationheading')}
                 </label>
                 <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
                   {currentOrganization.displayName}
@@ -155,7 +157,7 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = observer(({ isOpen, on
                     <span>Creating...</span>
                   </>
                 ) : (
-                  <span>Create Board</span>
+                  <span>{t('createBoard')}</span>
                 )}
               </button>
             </div>
